@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Staff | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header split-header">
+        <div>
+            <p class="eyebrow">Staff</p>
+            <h2>Staff management</h2>
+            <p class="page-intro">Track teachers and administrative collaborators across departments.</p>
+        </div>
+        <a class="button button-primary" href="{{ path('staff_new') }}">Add staff member</a>
+    </section>
+
+    <section class="panel-card">
+        <form method="get" class="search-form">
+            <input type="search" name="q" value="{{ query }}" placeholder="Search by name, email, or position">
+            <button class="button button-secondary" type="submit">Search</button>
+            {% if query %}
+                <a class="button button-ghost" href="{{ path('staff_index') }}">Reset</a>
+            {% endif %}
+        </form>
+    </section>
+
+    <section class="panel-card">
+        <div class="panel-card-header">
+            <div>
+                <p class="eyebrow">Team</p>
+                <h3>{{ staffMembers|length }} staff member{{ staffMembers|length == 1 ? '' : 's' }}</h3>
+            </div>
+        </div>
+
+        {% if staffMembers is not empty %}
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Position</th>
+                            <th>Department</th>
+                            <th>Email</th>
+                            <th>Join date</th>
+                            <th class="actions-column">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in staffMembers %}
+                            <tr>
+                                <td>{{ member.fullName }}</td>
+                                <td>{{ member.position }}</td>
+                                <td>{{ member.department }}</td>
+                                <td>{{ member.email }}</td>
+                                <td>{{ member.joinDate ? member.joinDate|date('d M Y') : 'N/A' }}</td>
+                                <td class="actions-column">
+                                    <div class="table-actions">
+                                        <a class="button button-ghost" href="{{ path('staff_edit', {id: member.id}) }}">Edit</a>
+                                        <form method="post" action="{{ path('staff_delete', {id: member.id}) }}" onsubmit="return confirm('Delete this staff member?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_staff_' ~ member.id) }}">
+                                            <button class="button button-danger" type="submit">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No staff records found for the current filter.</p>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Timetable | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header split-header">
+        <div>
+            <p class="eyebrow">Timetable</p>
+            <h2>Timetable management</h2>
+            <p class="page-intro">Publish schedules by class and keep room and teacher allocations centralized.</p>
+        </div>
+        <a class="button button-primary" href="{{ path('timetable_new') }}">Add schedule entry</a>
+    </section>
+
+    <section class="panel-card">
+        <div class="class-filter-list">
+            {% for className in classNames %}
+                <a class="class-filter {{ selectedClass == className ? 'is-active' : '' }}" href="{{ path('timetable_index', {class: className}) }}">{{ className }}</a>
+            {% else %}
+                <span class="status-pill">No classes yet</span>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel-card">
+        <div class="panel-card-header">
+            <div>
+                <p class="eyebrow">Weekly view</p>
+                <h3>{{ selectedClass ?: 'No class selected' }}</h3>
+            </div>
+        </div>
+
+        {% if selectedClass and timeSlots is not empty %}
+            <div class="table-wrapper">
+                <table class="data-table timetable-grid">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            {% for day in days %}
+                                <th>{{ day }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for slot in timeSlots %}
+                            <tr>
+                                <td>{{ slot }}</td>
+                                {% for day in days %}
+                                    {% set session = grid[day][slot] ?? null %}
+                                    <td>
+                                        {% if session %}
+                                            <div class="session-card">
+                                                <strong>{{ session.subject }}</strong>
+                                                <span>{{ session.teacherName }}</span>
+                                                <small>{{ session.classroomName }}</small>
+                                            </div>
+                                        {% else %}
+                                            <span class="muted-dash">-</span>
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No timetable entries are available for this class yet.</p>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="panel-card">
+        <div class="panel-card-header">
+            <div>
+                <p class="eyebrow">Detailed entries</p>
+                <h3>{{ entries|length }} session{{ entries|length == 1 ? '' : 's' }}</h3>
+            </div>
+        </div>
+
+        {% if entries is not empty %}
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Day</th>
+                            <th>Time</th>
+                            <th>Subject</th>
+                            <th>Teacher</th>
+                            <th>Classroom</th>
+                            <th class="actions-column">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in entries %}
+                            <tr>
+                                <td>{{ entry.dayOfWeek }}</td>
+                                <td>{{ entry.timeRange }}</td>
+                                <td>{{ entry.subject }}</td>
+                                <td>{{ entry.teacherName }}</td>
+                                <td>{{ entry.classroomName }}</td>
+                                <td class="actions-column">
+                                    <div class="table-actions">
+                                        <a class="button button-ghost" href="{{ path('timetable_edit', {id: entry.id}) }}">Edit</a>
+                                        <form method="post" action="{{ path('timetable_delete', {id: entry.id}) }}" onsubmit="return confirm('Delete this timetable entry?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_timetable_' ~ entry.id) }}">
+                                            <button class="button button-danger" type="submit">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No detailed sessions found.</p>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Classrooms | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header split-header">
+        <div>
+            <p class="eyebrow">Classrooms</p>
+            <h2>Classroom management</h2>
+            <p class="page-intro">Monitor room capacity, occupancy, and physical location across the institute.</p>
+        </div>
+        <a class="button button-primary" href="{{ path('classroom_new') }}">Add classroom</a>
+    </section>
+
+    <section class="cards-grid">
+        {% for classroom in classrooms %}
+            <article class="resource-card">
+                <div class="resource-card-header">
+                    <div>
+                        <h3>{{ classroom.name }}</h3>
+                        <p>{{ classroom.floor }}</p>
+                    </div>
+                    <span class="status-pill">{{ classroom.location ?: 'Classroom' }}</span>
+                </div>
+
+                <dl class="resource-card-metrics">
+                    <div>
+                        <dt>Capacity</dt>
+                        <dd>{{ classroom.capacity }}</dd>
+                    </div>
+                    <div>
+                        <dt>Usage</dt>
+                        <dd>{{ classroom.currentUsage }}/{{ classroom.capacity }}</dd>
+                    </div>
+                </dl>
+
+                <div class="occupancy-track">
+                    <span style="width: {{ classroom.occupancyPercent }}%"></span>
+                </div>
+                <p class="resource-card-footnote">{{ classroom.occupancyPercent }}% occupied</p>
+
+                <div class="card-actions">
+                    <a class="button button-ghost" href="{{ path('classroom_edit', {id: classroom.id}) }}">Edit</a>
+                    <form method="post" action="{{ path('classroom_delete', {id: classroom.id}) }}" onsubmit="return confirm('Delete this classroom?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete_classroom_' ~ classroom.id) }}">
+                        <button class="button button-danger" type="submit">Delete</button>
+                    </form>
+                </div>
+            </article>
+        {% else %}
+            <article class="panel-card empty-state">
+                <p>No classrooms have been added yet.</p>
+            </article>
+        {% endfor %}
+    </section>
+{% endblock %}

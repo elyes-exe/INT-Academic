@@ -1,0 +1,38 @@
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+!.env.local.example
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.local.example
+
+# Local accounts and developer tools
+data/accounts.json
+tools/composer.phar
+
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+.vercel/
+next.user-config.*
+
+# Node.js and Next.js outputs
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+*.log
+
+# Symfony dependencies and generated files
+symfony-app/vendor/
+symfony-app/var/
+
+# Common ignores
+.DS_Store

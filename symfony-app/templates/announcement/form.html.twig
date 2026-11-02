@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ isEdit ? 'Edit announcement' : 'Create announcement' }} | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header split-header">
+        <div>
+            <p class="eyebrow">Announcements</p>
+            <h2>{{ isEdit ? 'Edit announcement' : 'Create announcement' }}</h2>
+            <p class="page-intro">Broadcast academic updates with a clear priority and target audience.</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('announcement_index') }}">Back to list</a>
+    </section>
+
+    <section class="panel-card">
+        {{ form_start(form, { attr: { class: 'panel-form' } }) }}
+            <div class="form-grid">
+                <div class="form-field form-field-full">
+                    {{ form_label(form.title) }}
+                    {{ form_widget(form.title) }}
+                    {{ form_errors(form.title) }}
+                </div>
+                <div class="form-field form-field-full">
+                    {{ form_label(form.content) }}
+                    {{ form_widget(form.content) }}
+                    {{ form_errors(form.content) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.targetAudience) }}
+                    {{ form_widget(form.targetAudience) }}
+                    {{ form_errors(form.targetAudience) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.priority) }}
+                    {{ form_widget(form.priority) }}
+                    {{ form_errors(form.priority) }}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a class="button button-ghost" href="{{ path('announcement_index') }}">Cancel</a>
+                <button class="button button-primary" type="submit">{{ isEdit ? 'Save changes' : 'Publish announcement' }}</button>
+            </div>
+        {{ form_end(form) }}
+    </section>
+{% endblock %}

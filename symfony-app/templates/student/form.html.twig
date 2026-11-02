@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ isEdit ? 'Edit student' : 'Add student' }} | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header split-header">
+        <div>
+            <p class="eyebrow">Students</p>
+            <h2>{{ isEdit ? 'Edit student' : 'Add student' }}</h2>
+            <p class="page-intro">Maintain accurate student identity, class assignment, and enrollment information.</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('student_index') }}">Back to list</a>
+    </section>
+
+    <section class="panel-card">
+        {{ form_start(form, { attr: { class: 'panel-form' } }) }}
+            <div class="form-grid">
+                <div class="form-field">
+                    {{ form_label(form.fullName) }}
+                    {{ form_widget(form.fullName) }}
+                    {{ form_errors(form.fullName) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.email) }}
+                    {{ form_widget(form.email) }}
+                    {{ form_errors(form.email) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.className) }}
+                    {{ form_widget(form.className) }}
+                    {{ form_errors(form.className) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.registrationNumber) }}
+                    {{ form_widget(form.registrationNumber) }}
+                    {{ form_errors(form.registrationNumber) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.enrollmentDate) }}
+                    {{ form_widget(form.enrollmentDate) }}
+                    {{ form_errors(form.enrollmentDate) }}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a class="button button-ghost" href="{{ path('student_index') }}">Cancel</a>
+                <button class="button button-primary" type="submit">{{ isEdit ? 'Save changes' : 'Create student' }}</button>
+            </div>
+        {{ form_end(form) }}
+    </section>
+{% endblock %}

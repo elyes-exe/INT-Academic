@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}INT App{% endblock %}</title>
+        <link rel="icon" href="{{ asset('logo.png') }}">
+        <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+        {% block stylesheets %}{% endblock %}
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+    </head>
+    <body class="{{ app.user ? 'app-body' : 'auth-body' }}">
+        {% set pageContent %}
+            {% include 'partials/_flash_messages.html.twig' %}
+            {% block body %}{% endblock %}
+        {% endset %}
+
+        {% if app.user %}
+            {% set currentRoute = app.request.attributes.get('_route') ?? '' %}
+            {% set navItems = [
+                { label: 'Dashboard', route: 'dashboard_index', prefix: 'dashboard_' },
+                { label: 'Students', route: 'student_index', prefix: 'student_' },
+                { label: 'Staff', route: 'staff_index', prefix: 'staff_' },
+                { label: 'Timetable', route: 'timetable_index', prefix: 'timetable_' },
+                { label: 'Classrooms', route: 'classroom_index', prefix: 'classroom_' },
+                { label: 'Exams', route: 'exam_index', prefix: 'exam_' },
+                { label: 'Announcements', route: 'announcement_index', prefix: 'announcement_' },
+                { label: 'Settings', route: 'settings_index', prefix: 'settings_' },
+            ] %}
+            <div class="app-layout">
+                <aside class="sidebar">
+                    <a class="brand" href="{{ path('dashboard_index') }}">
+                        <img src="{{ asset('logo.png') }}" alt="INT App logo">
+                        <div>
+                            <strong>INT App</strong>
+                            <span>Academic Platform</span>
+                        </div>
+                    </a>
+
+                    <nav class="sidebar-nav">
+                        {% for item in navItems %}
+                            <a class="nav-link {{ currentRoute starts with item.prefix ? 'is-active' : '' }}" href="{{ path(item.route) }}">
+                                {{ item.label }}
+                            </a>
+                        {% endfor %}
+                    </nav>
+
+                    <div class="sidebar-user">
+                        <span class="sidebar-user-label">Connected as</span>
+                        <strong>{{ app.user.fullName }}</strong>
+                        <span>{{ app.user.email }}</span>
+                    </div>
+                </aside>
+
+                <div class="main-shell">
+                    <header class="topbar">
+                        <div>
+                            <p class="eyebrow">Digital academic administration</p>
+                            <h1>INT academic management</h1>
+                        </div>
+                        <div class="topbar-actions">
+                            <span class="status-pill">Symfony + MariaDB</span>
+                            <a class="button button-secondary" href="{{ path('app_logout') }}">Logout</a>
+                        </div>
+                    </header>
+
+                    <main class="page-shell">
+                        {{ pageContent }}
+                    </main>
+                </div>
+            </div>
+        {% else %}
+            <main class="auth-shell">
+                {{ pageContent }}
+            </main>
+        {% endif %}
+    </body>
+</html>

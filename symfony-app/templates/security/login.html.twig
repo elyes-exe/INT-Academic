@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Login | INT App{% endblock %}
+
+{% block body %}
+    <section class="auth-card">
+        <div class="auth-brand">
+            <img src="{{ asset('logo.png') }}" alt="INT App logo">
+            <div>
+                <h1>INT App</h1>
+                <p>Academic management back-office</p>
+            </div>
+        </div>
+
+        <div class="auth-copy">
+            <span class="status-pill">Symfony migration</span>
+            <h2>Administrator access</h2>
+            <p>
+                This Symfony back-office centralizes timetable updates, announcements,
+                classrooms, examinations, students, staff, and institutional settings.
+            </p>
+        </div>
+
+        {% if error %}
+            <div class="flash flash-error">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+        {% endif %}
+
+        <form method="post" class="panel-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="email">Email address</label>
+                    <input id="email" name="email" type="email" value="{{ last_username }}" autocomplete="email" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="secret_code">Secret code</label>
+                    <input id="secret_code" name="secret_code" type="password" autocomplete="off" required>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="button button-primary" type="submit">Sign in</button>
+            </div>
+        </form>
+
+        <div class="credential-box">
+            <h3>Seeded admin credentials</h3>
+            <p><strong>Email:</strong> admin@int.edu</p>
+            <p><strong>Password:</strong> admin123</p>
+            <p><strong>Secret code:</strong> INT2024</p>
+        </div>
+    </section>
+{% endblock %}

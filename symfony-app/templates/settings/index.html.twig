@@ -1,0 +1,59 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Settings | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Settings</p>
+            <h2>Institution settings</h2>
+            <p class="page-intro">Control contact information and platform behavior for the administrative back-office.</p>
+        </div>
+    </section>
+
+    <section class="panel-card">
+        {{ form_start(form, { attr: { class: 'panel-form' } }) }}
+            <div class="form-grid">
+                <div class="form-field">
+                    {{ form_label(form.instituteName) }}
+                    {{ form_widget(form.instituteName) }}
+                    {{ form_errors(form.instituteName) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.email) }}
+                    {{ form_widget(form.email) }}
+                    {{ form_errors(form.email) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.phone) }}
+                    {{ form_widget(form.phone) }}
+                    {{ form_errors(form.phone) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.address) }}
+                    {{ form_widget(form.address) }}
+                    {{ form_errors(form.address) }}
+                </div>
+            </div>
+
+            <div class="settings-toggles">
+                <label class="toggle-row">
+                    {{ form_widget(form.notificationsEnabled) }}
+                    <span>{{ form.notificationsEnabled.vars.label }}</span>
+                </label>
+                <label class="toggle-row">
+                    {{ form_widget(form.emailAlertsEnabled) }}
+                    <span>{{ form.emailAlertsEnabled.vars.label }}</span>
+                </label>
+                <label class="toggle-row">
+                    {{ form_widget(form.twoFactorEnabled) }}
+                    <span>{{ form.twoFactorEnabled.vars.label }}</span>
+                </label>
+            </div>
+
+            <div class="form-actions">
+                <button class="button button-primary" type="submit">Save changes</button>
+            </div>
+        {{ form_end(form) }}
+    </section>
+{% endblock %}

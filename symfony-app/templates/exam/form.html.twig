@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ isEdit ? 'Edit exam' : 'Schedule exam' }} | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header split-header">
+        <div>
+            <p class="eyebrow">Exams</p>
+            <h2>{{ isEdit ? 'Edit exam' : 'Schedule exam' }}</h2>
+            <p class="page-intro">Define date ranges, target classes, and room assignments for assessments.</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('exam_index') }}">Back to list</a>
+    </section>
+
+    <section class="panel-card">
+        {{ form_start(form, { attr: { class: 'panel-form' } }) }}
+            <div class="form-grid">
+                <div class="form-field">
+                    {{ form_label(form.name) }}
+                    {{ form_widget(form.name) }}
+                    {{ form_errors(form.name) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.className) }}
+                    {{ form_widget(form.className) }}
+                    {{ form_errors(form.className) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.classroomName) }}
+                    {{ form_widget(form.classroomName) }}
+                    {{ form_errors(form.classroomName) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.startDate) }}
+                    {{ form_widget(form.startDate) }}
+                    {{ form_errors(form.startDate) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.endDate) }}
+                    {{ form_widget(form.endDate) }}
+                    {{ form_errors(form.endDate) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.status) }}
+                    {{ form_widget(form.status) }}
+                    {{ form_errors(form.status) }}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a class="button button-ghost" href="{{ path('exam_index') }}">Cancel</a>
+                <button class="button button-primary" type="submit">{{ isEdit ? 'Save changes' : 'Create exam' }}</button>
+            </div>
+        {{ form_end(form) }}
+    </section>
+{% endblock %}

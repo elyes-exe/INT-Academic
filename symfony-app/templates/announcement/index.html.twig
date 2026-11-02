@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Announcements | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header split-header">
+        <div>
+            <p class="eyebrow">Announcements</p>
+            <h2>Institution announcements</h2>
+            <p class="page-intro">Publish official information to students, staff, or the whole institution.</p>
+        </div>
+        <a class="button button-primary" href="{{ path('announcement_new') }}">Create announcement</a>
+    </section>
+
+    <section class="stack-list">
+        {% for announcement in announcements %}
+            <article class="panel-card">
+                <div class="announcement-header">
+                    <div>
+                        <div class="stack-item-title-row">
+                            <h3>{{ announcement.title }}</h3>
+                            <span class="badge badge-priority-{{ announcement.priority|lower }}">{{ announcement.priority }}</span>
+                        </div>
+                        <p class="stack-meta">{{ announcement.targetAudience }} • {{ announcement.publishedAt|date('d M Y H:i') }}</p>
+                    </div>
+                    <div class="card-actions">
+                        <a class="button button-ghost" href="{{ path('announcement_edit', {id: announcement.id}) }}">Edit</a>
+                        <form method="post" action="{{ path('announcement_delete', {id: announcement.id}) }}" onsubmit="return confirm('Delete this announcement?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete_announcement_' ~ announcement.id) }}">
+                            <button class="button button-danger" type="submit">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                <p>{{ announcement.content }}</p>
+            </article>
+        {% else %}
+            <article class="panel-card empty-state">
+                <p>No announcements are available yet.</p>
+            </article>
+        {% endfor %}
+    </section>
+{% endblock %}

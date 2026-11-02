@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Students | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header split-header">
+        <div>
+            <p class="eyebrow">Students</p>
+            <h2>Students management</h2>
+            <p class="page-intro">Create, review, and maintain student records for the academic platform.</p>
+        </div>
+        <a class="button button-primary" href="{{ path('student_new') }}">Add student</a>
+    </section>
+
+    <section class="panel-card">
+        <form method="get" class="search-form">
+            <input type="search" name="q" value="{{ query }}" placeholder="Search by name, email, or class">
+            <button class="button button-secondary" type="submit">Search</button>
+            {% if query %}
+                <a class="button button-ghost" href="{{ path('student_index') }}">Reset</a>
+            {% endif %}
+        </form>
+    </section>
+
+    <section class="panel-card">
+        <div class="panel-card-header">
+            <div>
+                <p class="eyebrow">Registry</p>
+                <h3>{{ students|length }} student{{ students|length == 1 ? '' : 's' }}</h3>
+            </div>
+        </div>
+
+        {% if students is not empty %}
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Class</th>
+                            <th>Registration</th>
+                            <th>Email</th>
+                            <th>Enrollment date</th>
+                            <th class="actions-column">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                            <tr>
+                                <td>{{ student.fullName }}</td>
+                                <td>{{ student.className }}</td>
+                                <td>{{ student.registrationNumber ?: 'N/A' }}</td>
+                                <td>{{ student.email }}</td>
+                                <td>{{ student.enrollmentDate ? student.enrollmentDate|date('d M Y') : 'N/A' }}</td>
+                                <td class="actions-column">
+                                    <div class="table-actions">
+                                        <a class="button button-ghost" href="{{ path('student_edit', {id: student.id}) }}">Edit</a>
+                                        <form method="post" action="{{ path('student_delete', {id: student.id}) }}" onsubmit="return confirm('Delete this student?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_student_' ~ student.id) }}">
+                                            <button class="button button-danger" type="submit">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No student records found for the current filter.</p>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

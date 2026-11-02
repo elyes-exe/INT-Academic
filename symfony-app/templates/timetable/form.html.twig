@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ isEdit ? 'Edit timetable entry' : 'Add timetable entry' }} | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header split-header">
+        <div>
+            <p class="eyebrow">Timetable</p>
+            <h2>{{ isEdit ? 'Edit timetable entry' : 'Add timetable entry' }}</h2>
+            <p class="page-intro">Store a precise time slot, teacher, subject, classroom, and class assignment.</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('timetable_index') }}">Back to list</a>
+    </section>
+
+    <section class="panel-card">
+        {{ form_start(form, { attr: { class: 'panel-form' } }) }}
+            <div class="form-grid">
+                <div class="form-field">
+                    {{ form_label(form.className) }}
+                    {{ form_widget(form.className) }}
+                    {{ form_errors(form.className) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.dayOfWeek) }}
+                    {{ form_widget(form.dayOfWeek) }}
+                    {{ form_errors(form.dayOfWeek) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.startTime) }}
+                    {{ form_widget(form.startTime) }}
+                    {{ form_errors(form.startTime) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.endTime) }}
+                    {{ form_widget(form.endTime) }}
+                    {{ form_errors(form.endTime) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.subject) }}
+                    {{ form_widget(form.subject) }}
+                    {{ form_errors(form.subject) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.teacherName) }}
+                    {{ form_widget(form.teacherName) }}
+                    {{ form_errors(form.teacherName) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.classroomName) }}
+                    {{ form_widget(form.classroomName) }}
+                    {{ form_errors(form.classroomName) }}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a class="button button-ghost" href="{{ path('timetable_index') }}">Cancel</a>
+                <button class="button button-primary" type="submit">{{ isEdit ? 'Save changes' : 'Create entry' }}</button>
+            </div>
+        {{ form_end(form) }}
+    </section>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Overview</p>
+            <h2>Welcome to INT App</h2>
+            <p class="page-intro">Manage your academic institution with a real Symfony backend connected to XAMPP MariaDB.</p>
+        </div>
+    </section>
+
+    <section class="stats-grid">
+        <article class="stat-card">
+            <span>Students</span>
+            <strong>{{ studentCount }}</strong>
+            <p>Registered learners managed by the administration.</p>
+        </article>
+        <article class="stat-card">
+            <span>Staff</span>
+            <strong>{{ staffCount }}</strong>
+            <p>Teachers and administrative collaborators.</p>
+        </article>
+        <article class="stat-card">
+            <span>Classrooms</span>
+            <strong>{{ classroomCount }}</strong>
+            <p>Rooms and learning spaces currently tracked.</p>
+        </article>
+        <article class="stat-card">
+            <span>Announcements</span>
+            <strong>{{ announcementCount }}</strong>
+            <p>Institution updates distributed through the dashboard.</p>
+        </article>
+        <article class="stat-card">
+            <span>Exams</span>
+            <strong>{{ examCount }}</strong>
+            <p>Exam sessions configured for upcoming periods.</p>
+        </article>
+        <article class="stat-card">
+            <span>Timetable slots</span>
+            <strong>{{ timetableCount }}</strong>
+            <p>Scheduled teaching sessions across tracked classes.</p>
+        </article>
+    </section>
+
+    <section class="two-column-grid">
+        <article class="panel-card">
+            <div class="panel-card-header">
+                <div>
+                    <p class="eyebrow">Latest communication</p>
+                    <h3>Announcements</h3>
+                </div>
+                <a class="button button-secondary" href="{{ path('announcement_index') }}">Manage</a>
+            </div>
+
+            {% if latestAnnouncements is not empty %}
+                <div class="stack-list">
+                    {% for announcement in latestAnnouncements %}
+                        <div class="stack-item">
+                            <div class="stack-item-title-row">
+                                <strong>{{ announcement.title }}</strong>
+                                <span class="badge badge-priority-{{ announcement.priority|lower }}">{{ announcement.priority }}</span>
+                            </div>
+                            <p>{{ announcement.content|slice(0, 120) }}{% if announcement.content|length > 120 %}...{% endif %}</p>
+                            <span class="stack-meta">{{ announcement.targetAudience }} • {{ announcement.publishedAt|date('d M Y H:i') }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>No announcements yet.</p>
+                </div>
+            {% endif %}
+        </article>
+
+        <article class="panel-card">
+            <div class="panel-card-header">
+                <div>
+                    <p class="eyebrow">Upcoming assessments</p>
+                    <h3>Exams</h3>
+                </div>
+                <a class="button button-secondary" href="{{ path('exam_index') }}">Manage</a>
+            </div>
+
+            {% if upcomingExams is not empty %}
+                <div class="stack-list">
+                    {% for exam in upcomingExams %}
+                        <div class="stack-item">
+                            <div class="stack-item-title-row">
+                                <strong>{{ exam.name }}</strong>
+                                <span class="badge badge-status-{{ exam.status|lower }}">{{ exam.status }}</span>
+                            </div>
+                            <p>{{ exam.className }}{% if exam.classroomName %} • {{ exam.classroomName }}{% endif %}</p>
+                            <span class="stack-meta">{{ exam.startDate|date('d M Y') }}{% if exam.endDate|date('Y-m-d') != exam.startDate|date('Y-m-d') %} to {{ exam.endDate|date('d M Y') }}{% endif %}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>No exam sessions configured yet.</p>
+                </div>
+            {% endif %}
+        </article>
+    </section>
+
+    <section class="panel-card">
+        <div class="panel-card-header">
+            <div>
+                <p class="eyebrow">Quick access</p>
+                <h3>Administration modules</h3>
+            </div>
+        </div>
+        <div class="quick-links-grid">
+            <a class="quick-link-card" href="{{ path('student_index') }}">Students</a>
+            <a class="quick-link-card" href="{{ path('staff_index') }}">Staff</a>
+            <a class="quick-link-card" href="{{ path('timetable_index') }}">Timetable</a>
+            <a class="quick-link-card" href="{{ path('classroom_index') }}">Classrooms</a>
+            <a class="quick-link-card" href="{{ path('exam_index') }}">Exams</a>
+            <a class="quick-link-card" href="{{ path('announcement_index') }}">Announcements</a>
+            <a class="quick-link-card" href="{{ path('settings_index') }}">Settings</a>
+        </div>
+    </section>
+{% endblock %}

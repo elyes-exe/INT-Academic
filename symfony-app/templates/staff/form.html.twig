@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ isEdit ? 'Edit staff member' : 'Add staff member' }} | INT App{% endblock %}
+
+{% block body %}
+    <section class="page-header split-header">
+        <div>
+            <p class="eyebrow">Staff</p>
+            <h2>{{ isEdit ? 'Edit staff member' : 'Add staff member' }}</h2>
+            <p class="page-intro">Keep staff roles and department assignments synchronized with the academic office.</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('staff_index') }}">Back to list</a>
+    </section>
+
+    <section class="panel-card">
+        {{ form_start(form, { attr: { class: 'panel-form' } }) }}
+            <div class="form-grid">
+                <div class="form-field">
+                    {{ form_label(form.fullName) }}
+                    {{ form_widget(form.fullName) }}
+                    {{ form_errors(form.fullName) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.email) }}
+                    {{ form_widget(form.email) }}
+                    {{ form_errors(form.email) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.position) }}
+                    {{ form_widget(form.position) }}
+                    {{ form_errors(form.position) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.department) }}
+                    {{ form_widget(form.department) }}
+                    {{ form_errors(form.department) }}
+                </div>
+                <div class="form-field">
+                    {{ form_label(form.joinDate) }}
+                    {{ form_widget(form.joinDate) }}
+                    {{ form_errors(form.joinDate) }}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a class="button button-ghost" href="{{ path('staff_index') }}">Cancel</a>
+                <button class="button button-primary" type="submit">{{ isEdit ? 'Save changes' : 'Create staff member' }}</button>
+            </div>
+        {{ form_end(form) }}
+    </section>
+{% endblock %}
