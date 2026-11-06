@@ -173,7 +173,7 @@ export async function recordActivity(action: string, resource: string, label?: s
   );
 }
 
-export async function listResource(resource: string) {
+export async function listResource(resource: string, studentClass?: string) {
   const config = getResourceConfig(resource);
 
   if (!config) {
@@ -182,9 +182,14 @@ export async function listResource(resource: string) {
 
   await ensureMysqlSchema();
 
-  const [rows] = await getMysqlPool().query<RowDataPacket[]>(
-    `SELECT * FROM ${config.table} ORDER BY ${config.orderBy}`,
-  );
+  const [rows] = studentClass !== undefined && resource === 'students'
+    ? await getMysqlPool().execute<RowDataPacket[]>(
+        `SELECT * FROM ${config.table} WHERE class_name = ? ORDER BY ${config.orderBy}`,
+        [studentClass],
+      )
+    : await getMysqlPool().query<RowDataPacket[]>(
+        `SELECT * FROM ${config.table} ORDER BY ${config.orderBy}`,
+      );
 
   return rows.map((row) => rowToItem(row, config));
 }

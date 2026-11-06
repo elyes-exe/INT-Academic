@@ -10,6 +10,7 @@
 
 # Local accounts and developer tools
 data/accounts.json
+data/auth-session-secret
 tools/composer.phar
 
 # v0 sandbox internal files

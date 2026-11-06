@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { getOrCreateGoogleAccount } from '@/lib/server-accounts';
+import { setAuthSession } from '@/lib/server-auth-session';
 
 export async function POST(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
       user.email.split('@')[0];
 
     const account = await getOrCreateGoogleAccount({ email: user.email, fullName });
-    return NextResponse.json({ account });
+    return setAuthSession(NextResponse.json({ account }), account.id);
   } catch {
     return NextResponse.json({ message: 'Unable to complete Google sign-in.' }, { status: 500 });
   }

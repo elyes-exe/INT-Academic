@@ -36,8 +36,14 @@ export const classSections = [
 
 export type DiplomaLevel = (typeof classSections)[number]['level'];
 
+export const classYearOptions = ['1ère année', '2ème année'] as const;
+
 export const classSectionOptions: string[] = classSections.flatMap(({ level, programs }) =>
-  programs.map((program) => `${level} ${program}`),
+  programs.flatMap((program) =>
+    level === 'CAP'
+      ? [`${level} ${program}`]
+      : classYearOptions.map((year) => `${level} ${program} - ${year}`),
+  ),
 );
 
 export const legacyClassOptions = ['10-A', '10-B', '10-C', '11-A', '11-B', '9-A', '9-B'];

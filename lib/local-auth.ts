@@ -68,8 +68,8 @@ export async function getAccounts() {
 }
 
 export async function findAccountByEmail(email: string) {
-  const accounts = await getAccounts();
-  return accounts.find((account) => account.email.toLowerCase() === email.trim().toLowerCase()) ?? null;
+  const data = await requestJson<{ exists: boolean }>(`/api/auth/account-exists?email=${encodeURIComponent(email.trim())}`);
+  return data.exists;
 }
 
 export async function createStudentAccount(input: {
@@ -151,7 +151,7 @@ export async function getCurrentAccount() {
 
 export async function updateAccount(
   accountId: string,
-  changes: Partial<Pick<Account, 'role' | 'status'>>,
+  changes: Partial<Pick<Account, 'role' | 'status' | 'className'>>,
 ) {
   const data = await requestJson<{ account: Account }>('/api/auth/accounts', {
     method: 'PATCH',
@@ -195,6 +195,12 @@ export async function updateAccountPassword(email: string, password: string) {
 export async function signOut() {
   if (!canUseStorage()) {
     return;
+  }
+
+  try {
+    await fetch('/api/auth/session', { method: 'DELETE' });
+  } catch {
+    // Clear the local session even when the server cannot be reached.
   }
 
   window.localStorage.removeItem(SESSION_KEY);

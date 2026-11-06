@@ -37,6 +37,7 @@ import {
   updateAccount,
 } from '@/lib/local-auth';
 import { useLanguage } from '@/lib/language-context';
+import { classSectionOptions } from '@/lib/class-sections';
 
 const roleOptions: AccountRole[] = ['student', 'prof', 'staff', 'admin'];
 const statusOptions: AccountStatus[] = ['pending', 'verified', 'rejected'];
@@ -58,6 +59,7 @@ export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [updateError, setUpdateError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -89,6 +91,7 @@ export default function AccountsPage() {
         account.fullName.toLowerCase().includes(term) ||
         account.email.toLowerCase().includes(term) ||
         account.role.toLowerCase().includes(term) ||
+        (account.className ?? '').toLowerCase().includes(term) ||
         account.status.toLowerCase().includes(term)
       );
     });
@@ -96,15 +99,20 @@ export default function AccountsPage() {
 
   const pendingCount = accounts.filter((account) => account.status === 'pending').length;
 
-  const handleUpdate = async (accountId: string, changes: Partial<Pick<Account, 'role' | 'status'>>) => {
-    await updateAccount(accountId, changes);
-    const [nextAccounts, nextCurrentAccount] = await Promise.all([
-      getAccounts(),
-      getCurrentAccount(),
-    ]);
+  const handleUpdate = async (accountId: string, changes: Partial<Pick<Account, 'role' | 'status' | 'className'>>) => {
+    try {
+      setUpdateError('');
+      await updateAccount(accountId, changes);
+      const [nextAccounts, nextCurrentAccount] = await Promise.all([
+        getAccounts(),
+        getCurrentAccount(),
+      ]);
 
-    setAccounts(nextAccounts);
-    setCurrentAccount(nextCurrentAccount);
+      setAccounts(nextAccounts);
+      setCurrentAccount(nextCurrentAccount);
+    } catch (error) {
+      setUpdateError(error instanceof Error ? error.message : t('Unable to update account.'));
+    }
   };
 
   if (currentAccount && currentAccount.role !== 'admin') {
@@ -156,12 +164,19 @@ export default function AccountsPage() {
         </div>
       </Card>
 
+      {updateError && (
+        <p role="alert" className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {updateError}
+        </p>
+      )}
+
       <Card className="bg-card border border-border overflow-hidden">
         <Table>
           <TableHeader className="bg-background/50 border-b border-border">
             <TableRow className="hover:bg-background/50">
               <TableHead className="text-foreground font-semibold">{t('Account')}</TableHead>
               <TableHead className="text-foreground font-semibold">{t('Role')}</TableHead>
+              <TableHead className="text-foreground font-semibold">{t('Class')}</TableHead>
               <TableHead className="text-foreground font-semibold">{t('Status')}</TableHead>
               <TableHead className="text-foreground font-semibold">{t('Created')}</TableHead>
               <TableHead className="text-foreground font-semibold text-right">{t('Actions')}</TableHead>
@@ -200,6 +215,36 @@ export default function AccountsPage() {
                     </Select>
                   </TableCell>
                   <TableCell>
+                    {account.role === 'student' ? (
+                      <div className="space-y-1">
+                        <Select
+                          value={account.className || '__unassigned__'}
+                          onValueChange={(className) => handleUpdate(account.id, { className: className === '__unassigned__' ? '' : className })}
+                        >
+                          <SelectTrigger className="w-64 max-w-[28vw] bg-background text-foreground">
+                            <SelectValue placeholder={t('Assign class')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__unassigned__" disabled={account.status === 'verified'}>
+                              {t('Unassigned')}
+                            </SelectItem>
+                            {account.className && !classSectionOptions.includes(account.className) && (
+                              <SelectItem value={account.className}>{account.className}</SelectItem>
+                            )}
+                            {classSectionOptions.map((className) => (
+                              <SelectItem key={className} value={className}>{className}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {!account.className && (
+                          <p className="text-xs text-amber-600 dark:text-amber-400">{t('Assign a class before verifying')}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <Select
                       value={account.status}
                       onValueChange={(status) => handleUpdate(account.id, { status: status as AccountStatus })}
@@ -209,7 +254,7 @@ export default function AccountsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {statusOptions.map((status) => (
-                          <SelectItem key={status} value={status}>
+                          <SelectItem key={status} value={status} disabled={status === 'verified' && account.role === 'student' && !account.className}>
                             {t(status)}
                           </SelectItem>
                         ))}
@@ -230,6 +275,7 @@ export default function AccountsPage() {
                         variant="outline"
                         className="gap-2 border-border text-foreground"
                         onClick={() => handleUpdate(account.id, { status: 'verified' })}
+                        disabled={account.role === 'student' && !account.className}
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         {t('Verify')}
@@ -250,7 +296,7 @@ export default function AccountsPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   {t('No accounts found')}
                 </TableCell>
               </TableRow>

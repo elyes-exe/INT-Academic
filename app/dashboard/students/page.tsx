@@ -28,9 +28,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Search, Plus, MoreHorizontal, Edit2, Trash2 } from 'lucide-react';
 import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-client';
-import { classSections, getDiplomaLevel, type DiplomaLevel } from '@/lib/class-sections';
+import { classSectionOptions, classSections, getDiplomaLevel, type DiplomaLevel } from '@/lib/class-sections';
 import { useLanguage } from '@/lib/language-context';
 import { useRoleAccess } from '@/lib/use-role-access';
+import { getCurrentAccount } from '@/lib/local-auth';
 
 type Student = {
   id?: number;
@@ -51,9 +52,17 @@ export default function StudentsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Student>(emptyStudent);
+  const [assignedClass, setAssignedClass] = useState('');
 
   const loadStudents = async () => {
-    setStudents(await fetchResource<Student>('students'));
+    const [nextStudents, account] = await Promise.all([
+      fetchResource<Student>('students'),
+      getCurrentAccount(),
+    ]);
+    setAssignedClass(account?.role === 'student' ? account.className ?? '' : '');
+    setStudents(account?.role === 'student'
+      ? nextStudents.filter((student) => student.class === account.className)
+      : nextStudents);
   };
 
   useEffect(() => {
@@ -100,7 +109,13 @@ export default function StudentsPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">{t(canManage ? 'Students Management' : 'Students')}</h1>
-          <p className="text-muted-foreground">{t(canManage ? 'Manage student records and enrollment' : 'Browse students by program')}</p>
+          <p className="text-muted-foreground">
+            {canManage
+              ? t('Manage student records and enrollment')
+              : assignedClass
+                ? `${t('Your assigned class')}: ${assignedClass}`
+                : t('Browse students in your assigned class')}
+          </p>
         </div>
         {canManage && <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -151,15 +166,14 @@ export default function StudentsPage() {
                     className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
                   >
                     <option value="">{t('Select Class')}</option>
-                    {formData.class && getDiplomaLevel(formData.class) === null && (
+                    {formData.class && !classSectionOptions.includes(formData.class) && (
                       <option value={formData.class}>{formData.class}</option>
                     )}
-                    {classSections.map(({ level, programs }) => (
+                    {classSections.map(({ level }) => (
                       <optgroup key={level} label={level}>
-                        {programs.map((program) => {
-                          const className = `${level} ${program}`;
-                          return <option key={className} value={className}>{className}</option>;
-                        })}
+                        {classSectionOptions.filter((option) => getDiplomaLevel(option) === level).map((className) => (
+                          <option key={className} value={className}>{className}</option>
+                        ))}
                       </optgroup>
                     ))}
                   </select>

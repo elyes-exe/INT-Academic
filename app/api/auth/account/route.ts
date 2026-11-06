@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getAccountById, updateAccountProfile } from '@/lib/server-accounts';
+import { getAuthSessionAccountId } from '@/lib/server-auth-session';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const accountId = searchParams.get('accountId') ?? '';
+  const sessionId = await getAuthSessionAccountId(request);
 
-  if (!accountId) {
+  if (!accountId || !sessionId || accountId !== sessionId) {
     return NextResponse.json({ account: null }, { status: 200 });
   }
 
@@ -14,13 +16,19 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    const sessionId = await getAuthSessionAccountId(request);
     const body = await request.json();
     const accountId = typeof body.accountId === 'string' ? body.accountId : '';
     const fullName = typeof body.fullName === 'string' ? body.fullName : undefined;
     const phone = typeof body.phone === 'string' ? body.phone : undefined;
 
-    if (!accountId) {
-      return NextResponse.json({ message: 'Account id is required.' }, { status: 400 });
+    if (!accountId || !sessionId || accountId !== sessionId) {
+      return NextResponse.json({ message: 'You can only update your own account.' }, { status: 403 });
+    }
+
+    const currentAccount = await getAccountById(sessionId);
+    if (!currentAccount || currentAccount.status !== 'verified') {
+      return NextResponse.json({ message: 'A verified account is required.' }, { status: 403 });
     }
 
     const account = await updateAccountProfile(accountId, { fullName, phone });

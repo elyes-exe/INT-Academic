@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { signIn } from '@/lib/server-accounts';
+import { setAuthSession } from '@/lib/server-auth-session';
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: result.message }, { status: 401 });
     }
 
-    return NextResponse.json({ account: result.account });
+    return setAuthSession(NextResponse.json({ account: result.account }), result.account.id);
   } catch {
     return NextResponse.json({ message: 'Unable to sign in.' }, { status: 500 });
   }

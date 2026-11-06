@@ -41,6 +41,7 @@ export async function ensureMysqlSchema() {
       phone VARCHAR(50) NULL,
       password VARCHAR(255) NOT NULL,
       role ENUM('admin', 'staff', 'prof', 'student') NOT NULL DEFAULT 'student',
+      class_name VARCHAR(150) NULL,
       status ENUM('pending', 'verified', 'rejected') NOT NULL DEFAULT 'pending',
       created_at DATETIME NOT NULL,
       verified_at DATETIME NULL
@@ -63,6 +64,14 @@ export async function ensureMysqlSchema() {
     await getPool().query(
       "ALTER TABLE accounts MODIFY COLUMN role ENUM('admin', 'staff', 'prof', 'student') NOT NULL DEFAULT 'student'",
     );
+  }
+
+  const [accountClassColumns] = await getPool().query<RowDataPacket[]>(
+    "SHOW COLUMNS FROM accounts LIKE 'class_name'",
+  );
+
+  if (accountClassColumns.length === 0) {
+    await getPool().query('ALTER TABLE accounts ADD COLUMN class_name VARCHAR(150) NULL AFTER role');
   }
 
   await getPool().query(`

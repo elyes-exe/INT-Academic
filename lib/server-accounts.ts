@@ -21,6 +21,7 @@ type AccountRow = RowDataPacket & {
   phone: string | null;
   password: string;
   role: AccountRole;
+  class_name: string | null;
   status: AccountStatus;
   created_at: Date | string;
   verified_at: Date | string | null;
@@ -36,6 +37,7 @@ const demoAdmin: Required<Account> = {
   phone: '',
   password: 'admin123',
   role: 'admin',
+  className: '',
   status: 'verified',
   createdAt: '2024-01-01T00:00:00.000Z',
   verifiedAt: '2024-01-01T00:00:00.000Z',
@@ -62,6 +64,7 @@ function accountFromRow(row: AccountRow): Account {
     phone: row.phone ?? undefined,
     password: row.password,
     role: row.role,
+    className: row.class_name ?? undefined,
     status: row.status,
     createdAt: isoDate(row.created_at) ?? new Date().toISOString(),
     verifiedAt: isoDate(row.verified_at),
@@ -133,20 +136,21 @@ async function saveAccount(account: Account, overwrite = true) {
   const pool = getMysqlPool();
   const sql = overwrite
     ? `
-        INSERT INTO accounts (id, full_name, email, phone, password, role, status, created_at, verified_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO accounts (id, full_name, email, phone, password, role, class_name, status, created_at, verified_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           full_name = VALUES(full_name),
           phone = VALUES(phone),
           password = VALUES(password),
           role = VALUES(role),
+          class_name = VALUES(class_name),
           status = VALUES(status),
           created_at = VALUES(created_at),
           verified_at = VALUES(verified_at)
       `
     : `
-        INSERT IGNORE INTO accounts (id, full_name, email, phone, password, role, status, created_at, verified_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT IGNORE INTO accounts (id, full_name, email, phone, password, role, class_name, status, created_at, verified_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
   await pool.execute(sql, [
@@ -156,6 +160,7 @@ async function saveAccount(account: Account, overwrite = true) {
     account.phone?.trim() || null,
     account.password ?? '',
     account.role,
+    account.className ?? null,
     account.status,
     mysqlDate(account.createdAt),
     mysqlDate(account.verifiedAt),
@@ -275,7 +280,7 @@ export async function signIn(emailInput: string, password: string): Promise<Sign
 
 export async function updateAccount(
   accountId: string,
-  changes: Partial<Pick<Account, 'role' | 'status'>>,
+  changes: Partial<Pick<Account, 'role' | 'status' | 'className'>>,
 ) {
   await ensureDatabaseReady();
 
@@ -292,16 +297,34 @@ export async function updateAccount(
   await getMysqlPool().execute(
     `
       UPDATE accounts
-      SET role = ?, status = ?, verified_at = ?
+      SET role = ?, class_name = ?, status = ?, verified_at = ?
       WHERE id = ?
     `,
     [
       changes.role ?? existingAccount.role,
+      changes.className === undefined ? existingAccount.className ?? null : changes.className.trim() || null,
       status,
       mysqlDate(verifiedAt),
       accountId,
     ],
   );
+
+  const role = changes.role ?? existingAccount.role;
+  const className = changes.className === undefined
+    ? existingAccount.className
+    : changes.className.trim() || undefined;
+
+  if (role === 'student' && status === 'verified' && className) {
+    const enrollmentDate = existingAccount.createdAt.slice(0, 10);
+    await getMysqlPool().execute(
+      `
+        INSERT INTO students (name, email, class_name, enrollment_date)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE name = VALUES(name), class_name = VALUES(class_name)
+      `,
+      [existingAccount.fullName, normalizeEmail(existingAccount.email), className, enrollmentDate],
+    );
+  }
 
   await recordActivity(status === 'verified' ? 'verified' : 'updated', 'Account', existingAccount.fullName);
 

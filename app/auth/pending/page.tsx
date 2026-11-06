@@ -24,7 +24,7 @@ export default function PendingAccountPage() {
             />
           </div>
           <h1 className="text-3xl font-bold text-foreground">{t('Verification pending')}</h1>
-          <p className="text-muted-foreground">{t('An administrator must verify your student account first')}</p>
+          <p className="text-muted-foreground">{t('An administrator must verify your account and assign your class')}</p>
         </div>
 
         <Card className="p-8 bg-card border border-border shadow-md rounded-xl">
@@ -35,7 +35,7 @@ export default function PendingAccountPage() {
             <div>
               <h2 className="font-semibold text-foreground">{t('Waiting for approval')}</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {t('Your account was created as a student account. You can sign in after an admin marks it as verified.')}
+                {t('Your student account needs admin verification and a class assignment before dashboard access is available.')}
               </p>
             </div>
           </div>
@@ -46,7 +46,7 @@ export default function PendingAccountPage() {
               {t('Admin review')}
             </div>
             <p className="text-sm text-muted-foreground mt-2">
-              {t('Admins can verify accounts and adjust roles from the Accounts page inside the dashboard.')}
+              {t('Admins can assign or change your class and verify your account from the Accounts page inside the dashboard.')}
             </p>
           </div>
 
