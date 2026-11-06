@@ -15,14 +15,23 @@ import {
   Settings,
   UserCog,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Account, getCurrentAccount } from '@/lib/local-auth';
 import { useLanguage } from '@/lib/language-context';
 
-const navItems = [
+type NavItem = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  adminOnly?: boolean;
+  hideFromStudents?: boolean;
+};
+
+const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Students', href: '/dashboard/students', icon: Users },
-  { label: 'Staff', href: '/dashboard/staff', icon: UserCheck },
+  { label: 'Staff', href: '/dashboard/staff', icon: UserCheck, hideFromStudents: true },
   { label: 'Timetable', href: '/dashboard/timetable', icon: Calendar },
   { label: 'Classrooms', href: '/dashboard/classrooms', icon: DoorOpen },
   { label: 'Exams', href: '/dashboard/exams', icon: FileText },
@@ -54,7 +63,17 @@ export function Sidebar() {
     };
   }, []);
 
-  const visibleNavItems = navItems.filter((item) => !item.adminOnly || account?.role === 'admin');
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.adminOnly && account?.role !== 'admin') {
+      return false;
+    }
+
+    if (item.hideFromStudents && (!account || account.role === 'student')) {
+      return false;
+    }
+
+    return true;
+  });
 
   return (
     <aside className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col shadow-sm">

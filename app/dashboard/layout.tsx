@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
 import { getCurrentAccount } from '@/lib/local-auth';
@@ -13,11 +13,13 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { t } = useLanguage();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
+    setIsReady(false);
 
     async function checkAccess() {
       const account = await getCurrentAccount();
@@ -36,6 +38,11 @@ export default function DashboardLayout({
         return;
       }
 
+      if (account.role === 'student' && pathname.startsWith('/dashboard/staff')) {
+        router.replace('/dashboard');
+        return;
+      }
+
       setIsReady(true);
     }
 
@@ -44,7 +51,7 @@ export default function DashboardLayout({
     return () => {
       isMounted = false;
     };
-  }, [router]);
+  }, [pathname, router]);
 
   if (!isReady) {
     return (

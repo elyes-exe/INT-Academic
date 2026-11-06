@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useLanguage } from '@/lib/language-context';
+import { getCurrentAccount, type AccountRole } from '@/lib/local-auth';
 
 type DashboardSummary = {
   counts: {
@@ -69,8 +70,17 @@ function formatTime(value: string, locale: string) {
 export default function Dashboard() {
   const { language, t } = useLanguage();
   const [summary, setSummary] = useState<DashboardSummary>(defaultSummary);
+  const [accountRole, setAccountRole] = useState<AccountRole | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
+    getCurrentAccount().then((account) => {
+      if (isMounted) {
+        setAccountRole(account?.role ?? null);
+      }
+    });
+
     async function loadSummary() {
       const response = await fetch('/api/dashboard/summary');
 
@@ -80,6 +90,10 @@ export default function Dashboard() {
     }
 
     loadSummary();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const quickLinks = [
@@ -88,6 +102,9 @@ export default function Dashboard() {
     { label: 'Timetable', href: '/dashboard/timetable', icon: Calendar, count: summary.counts.timetable },
     { label: 'Announcements', href: '/dashboard/announcements', icon: Megaphone, count: summary.counts.announcements },
   ];
+  const visibleQuickLinks = accountRole === 'admin' || accountRole === 'staff'
+    ? quickLinks
+    : quickLinks.filter((link) => link.href !== '/dashboard/staff');
 
   const extraStats = [
     { label: 'Classrooms', value: summary.counts.classrooms, icon: DoorOpen },
@@ -104,7 +121,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {quickLinks.map((link) => {
+        {visibleQuickLinks.map((link) => {
           const Icon = link.icon;
 
           return (
