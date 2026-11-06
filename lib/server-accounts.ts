@@ -113,6 +113,30 @@ export async function getAccounts() {
   return sanitizeAccounts(rows.map(accountFromRow));
 }
 
+export async function getTeachers() {
+  await ensureDatabaseReady();
+
+  const [rows] = await getMysqlPool().query<(RowDataPacket & {
+    id: string;
+    full_name: string;
+    class_name: string;
+  })[]>(
+    `SELECT id, full_name, class_name
+     FROM accounts
+     WHERE role IN ('teacher', 'prof')
+       AND status = 'verified'
+       AND class_name IS NOT NULL
+       AND class_name <> ''
+     ORDER BY full_name`,
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    fullName: row.full_name,
+    className: row.class_name,
+  }));
+}
+
 export async function getAccountById(accountId: string) {
   await ensureDatabaseReady();
 

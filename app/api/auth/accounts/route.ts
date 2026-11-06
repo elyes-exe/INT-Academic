@@ -5,7 +5,7 @@ import { classSectionOptions } from '@/lib/class-sections';
 import { getAuthSessionAccountId } from '@/lib/server-auth-session';
 
 function isRole(role: unknown): role is AccountRole {
-  return role === 'admin' || role === 'staff' || role === 'prof' || role === 'student';
+  return role === 'admin' || role === 'staff' || role === 'prof' || role === 'teacher' || role === 'student';
 }
 
 function isStatus(status: unknown): status is AccountStatus {
@@ -64,8 +64,9 @@ export async function PATCH(request: Request) {
     const nextStatus = changes.status ?? currentAccount.status;
     const nextClassName = changes.className === undefined ? currentAccount.className : changes.className;
 
-    if (nextRole === 'student' && nextStatus === 'verified' && !nextClassName) {
-      return NextResponse.json({ message: 'Assign a class to the student before verifying the account.' }, { status: 400 });
+    if ((nextRole === 'student' || nextRole === 'teacher') && nextStatus === 'verified' && !nextClassName) {
+      const person = nextRole === 'teacher' ? 'teacher' : 'student';
+      return NextResponse.json({ message: `Assign a class to the ${person} before verifying the account.` }, { status: 400 });
     }
 
     const account = await updateAccount(accountId, changes);

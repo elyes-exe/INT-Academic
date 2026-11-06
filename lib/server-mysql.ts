@@ -40,7 +40,7 @@ export async function ensureMysqlSchema() {
       email VARCHAR(255) NOT NULL UNIQUE,
       phone VARCHAR(50) NULL,
       password VARCHAR(255) NOT NULL,
-      role ENUM('admin', 'staff', 'prof', 'student') NOT NULL DEFAULT 'student',
+      role ENUM('admin', 'staff', 'prof', 'teacher', 'student') NOT NULL DEFAULT 'student',
       class_name VARCHAR(150) NULL,
       status ENUM('pending', 'verified', 'rejected') NOT NULL DEFAULT 'pending',
       created_at DATETIME NOT NULL,
@@ -60,9 +60,10 @@ export async function ensureMysqlSchema() {
     "SHOW COLUMNS FROM accounts LIKE 'role'",
   );
 
-  if (!String(roleColumns[0]?.Type ?? '').includes("'prof'")) {
+  const roleType = String(roleColumns[0]?.Type ?? '');
+  if (!roleType.includes("'prof'") || !roleType.includes("'teacher'")) {
     await getPool().query(
-      "ALTER TABLE accounts MODIFY COLUMN role ENUM('admin', 'staff', 'prof', 'student') NOT NULL DEFAULT 'student'",
+      "ALTER TABLE accounts MODIFY COLUMN role ENUM('admin', 'staff', 'prof', 'teacher', 'student') NOT NULL DEFAULT 'student'",
     );
   }
 

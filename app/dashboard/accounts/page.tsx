@@ -39,7 +39,7 @@ import {
 import { useLanguage } from '@/lib/language-context';
 import { classSectionOptions } from '@/lib/class-sections';
 
-const roleOptions: AccountRole[] = ['student', 'prof', 'staff', 'admin'];
+const roleOptions: AccountRole[] = ['student', 'teacher', 'prof', 'staff', 'admin'];
 const statusOptions: AccountStatus[] = ['pending', 'verified', 'rejected'];
 
 function statusBadgeClass(status: AccountStatus) {
@@ -215,7 +215,7 @@ export default function AccountsPage() {
                     </Select>
                   </TableCell>
                   <TableCell>
-                    {account.role === 'student' ? (
+                    {account.role === 'student' || account.role === 'teacher' || account.role === 'prof' ? (
                       <div className="space-y-1">
                         <Select
                           value={account.className || '__unassigned__'}
@@ -236,7 +236,7 @@ export default function AccountsPage() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {!account.className && (
+                        {!account.className && (account.role === 'student' || account.role === 'teacher') && (
                           <p className="text-xs text-amber-600 dark:text-amber-400">{t('Assign a class before verifying')}</p>
                         )}
                       </div>
@@ -254,7 +254,7 @@ export default function AccountsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {statusOptions.map((status) => (
-                          <SelectItem key={status} value={status} disabled={status === 'verified' && account.role === 'student' && !account.className}>
+                          <SelectItem key={status} value={status} disabled={status === 'verified' && (account.role === 'student' || account.role === 'teacher') && !account.className}>
                             {t(status)}
                           </SelectItem>
                         ))}
@@ -275,7 +275,7 @@ export default function AccountsPage() {
                         variant="outline"
                         className="gap-2 border-border text-foreground"
                         onClick={() => handleUpdate(account.id, { status: 'verified' })}
-                        disabled={account.role === 'student' && !account.className}
+                        disabled={(account.role === 'student' || account.role === 'teacher') && !account.className}
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         {t('Verify')}

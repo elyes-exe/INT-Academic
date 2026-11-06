@@ -30,6 +30,12 @@ type TimetableEntry = {
   classroom: string;
 };
 
+type TeacherOption = {
+  id: string;
+  fullName: string;
+  className: string;
+};
+
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const timeSlots = [
   '09:00 - 10:00',
@@ -55,6 +61,9 @@ export default function TimetablePage() {
   const [selectedClass, setSelectedClass] = useState(classSectionOptions[0]);
   const [assignedClass, setAssignedClass] = useState('');
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
+  const [teachers, setTeachers] = useState<TeacherOption[]>([]);
+  const [selectedTeacherId, setSelectedTeacherId] = useState('');
+  const [teacherLoadError, setTeacherLoadError] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<TimetableEntry>(emptyEntry);
 
@@ -75,6 +84,38 @@ export default function TimetablePage() {
     loadEntries();
   }, []);
 
+  useEffect(() => {
+    if (!canManage) return;
+
+    let isMounted = true;
+
+    async function loadTeachers() {
+      try {
+        const response = await fetch('/api/dashboard/teachers');
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Unable to load teachers.');
+        }
+
+        if (isMounted) {
+          setTeachers(data.teachers);
+          setTeacherLoadError('');
+        }
+      } catch {
+        if (isMounted) {
+          setTeacherLoadError('Unable to load teachers.');
+        }
+      }
+    }
+
+    loadTeachers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [canManage]);
+
   const timetable = useMemo(
     () => entries.filter((entry) => entry.className === selectedClass),
     [entries, selectedClass],
@@ -86,9 +127,17 @@ export default function TimetablePage() {
 
   const handleAddSlot = async (event: React.FormEvent) => {
     event.preventDefault();
-    await saveResource<TimetableEntry>('timetable', { ...formData, className: selectedClass });
+    const selectedTeacher = teachers.find((teacher) => teacher.id === selectedTeacherId);
+    if (!selectedTeacher) return;
+
+    await saveResource<TimetableEntry>('timetable', {
+      ...formData,
+      className: selectedClass,
+      teacher: `${selectedTeacher.fullName} - ${selectedTeacher.className}`,
+    });
     await loadEntries();
     setFormData({ ...emptyEntry, className: selectedClass });
+    setSelectedTeacherId('');
     setIsDialogOpen(false);
   };
 
@@ -107,7 +156,10 @@ export default function TimetablePage() {
         {canManage && <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button
-              onClick={() => setFormData({ ...emptyEntry, className: selectedClass })}
+              onClick={() => {
+                setFormData({ ...emptyEntry, className: selectedClass });
+                setSelectedTeacherId('');
+              }}
               className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <Plus className="w-4 h-4" />
@@ -164,13 +216,26 @@ export default function TimetablePage() {
               <FieldGroup>
                 <Field>
                   <FieldLabel>{t('Teacher')}</FieldLabel>
-                  <Input
-                    placeholder={t('Teacher name')}
-                    value={formData.teacher}
-                    onChange={(event) => setFormData({ ...formData, teacher: event.target.value })}
+                  <select
+                    value={selectedTeacherId}
+                    onChange={(event) => setSelectedTeacherId(event.target.value)}
                     required
-                    className="bg-background text-foreground"
-                  />
+                    className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
+                  >
+                    <option value="">{t('Select a teacher')}</option>
+                    {teachers.map((teacher) => (
+                      <option key={teacher.id} value={teacher.id}>
+                        {teacher.fullName} - {teacher.className}
+                      </option>
+                    ))}
+                  </select>
+                  {teacherLoadError ? (
+                    <p role="alert" className="text-xs text-destructive mt-1">{t(teacherLoadError)}</p>
+                  ) : teachers.length === 0 ? (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t('No verified teachers are assigned to a section yet. Assign a section on Accounts.')}
+                    </p>
+                  ) : null}
                 </Field>
               </FieldGroup>
               <FieldGroup>

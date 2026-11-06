@@ -1,4 +1,4 @@
-export type AccountRole = 'admin' | 'staff' | 'prof' | 'student';
+export type AccountRole = 'admin' | 'staff' | 'prof' | 'teacher' | 'student';
 export type AccountStatus = 'pending' | 'verified' | 'rejected';
 
 export type Account = {
