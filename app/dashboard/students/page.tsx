@@ -26,9 +26,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Search, Plus, MoreHorizontal, Edit2, Trash2 } from 'lucide-react';
 import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-client';
-import { classSectionOptions, classSections, getDiplomaLevel, type DiplomaLevel } from '@/lib/class-sections';
+import { classSectionOptions, classSections, getDiplomaLevel } from '@/lib/class-sections';
 import { useLanguage } from '@/lib/language-context';
 import { useRoleAccess } from '@/lib/use-role-access';
 import { getCurrentAccount } from '@/lib/local-auth';
@@ -48,7 +57,7 @@ export default function StudentsPage() {
   const { canManage } = useRoleAccess();
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLevel, setSelectedLevel] = useState<DiplomaLevel | 'All'>('All');
+  const [selectedSection, setSelectedSection] = useState('All');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Student>(emptyStudent);
@@ -76,7 +85,9 @@ export default function StudentsPage() {
       student.class.toLowerCase().includes(searchTerm.toLowerCase()),
   );
   const sectionFilteredStudents = filteredStudents.filter((student) =>
-    selectedLevel === 'All' || getDiplomaLevel(student.class) === selectedLevel,
+    selectedSection === 'All' ||
+    student.class === selectedSection ||
+    getDiplomaLevel(student.class) === selectedSection,
   );
 
   const handleSaveStudent = async (event: React.FormEvent) => {
@@ -212,19 +223,30 @@ export default function StudentsPage() {
         </Dialog>}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        {(['All', ...classSections.map(({ level }) => level)] as const).map((level) => (
-          <Button
-            key={level}
-            type="button"
-            variant={selectedLevel === level ? 'default' : 'outline'}
-            onClick={() => setSelectedLevel(level)}
-            className={selectedLevel === level ? '' : 'text-foreground border-border'}
-          >
-            {level === 'All' ? t('All Classes') : level}
-          </Button>
-        ))}
-      </div>
+      <Card className="bg-card border border-border p-4 mb-6">
+        <div className="mb-2 text-sm font-medium text-foreground">{t('Filter by section or class')}</div>
+        <Select value={selectedSection} onValueChange={setSelectedSection}>
+          <SelectTrigger className="w-full max-w-2xl bg-background text-foreground">
+            <SelectValue placeholder={t('Select a section or class')} />
+          </SelectTrigger>
+          <SelectContent className="max-h-80">
+            <SelectGroup>
+              <SelectItem value="All">{t('All Classes')}</SelectItem>
+            </SelectGroup>
+            {classSections.map(({ level }) => (
+              <SelectGroup key={level}>
+                <SelectLabel>{level}</SelectLabel>
+                <SelectItem value={level}>{t(`All ${level} classes`)}</SelectItem>
+                {classSectionOptions
+                  .filter((className) => getDiplomaLevel(className) === level)
+                  .map((className) => (
+                    <SelectItem key={className} value={className}>{className}</SelectItem>
+                  ))}
+              </SelectGroup>
+            ))}
+          </SelectContent>
+        </Select>
+      </Card>
 
       <Card className="bg-card border border-border p-4 mb-6">
         <div className="relative">
