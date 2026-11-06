@@ -38,7 +38,8 @@ export default function DashboardLayout({
         return;
       }
 
-      if (account.role === 'student' && pathname.startsWith('/dashboard/staff')) {
+      const isManager = account.role === 'admin' || account.role === 'staff';
+      if (!isManager && pathname.startsWith('/dashboard/staff')) {
         router.replace('/dashboard');
         return;
       }

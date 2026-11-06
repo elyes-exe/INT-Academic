@@ -59,6 +59,7 @@ const resources: Record<ResourceName, ResourceConfig> = {
       startDate: 'start_date',
       endDate: 'end_date',
       classes: 'classes_count',
+      className: 'class_name',
     },
     orderBy: 'start_date DESC',
   },

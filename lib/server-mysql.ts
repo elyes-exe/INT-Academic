@@ -40,7 +40,7 @@ export async function ensureMysqlSchema() {
       email VARCHAR(255) NOT NULL UNIQUE,
       phone VARCHAR(50) NULL,
       password VARCHAR(255) NOT NULL,
-      role ENUM('admin', 'staff', 'student') NOT NULL DEFAULT 'student',
+      role ENUM('admin', 'staff', 'prof', 'student') NOT NULL DEFAULT 'student',
       status ENUM('pending', 'verified', 'rejected') NOT NULL DEFAULT 'pending',
       created_at DATETIME NOT NULL,
       verified_at DATETIME NULL
@@ -53,6 +53,16 @@ export async function ensureMysqlSchema() {
 
   if (phoneColumns.length === 0) {
     await getPool().query('ALTER TABLE accounts ADD COLUMN phone VARCHAR(50) NULL AFTER email');
+  }
+
+  const [roleColumns] = await getPool().query<RowDataPacket[]>(
+    "SHOW COLUMNS FROM accounts LIKE 'role'",
+  );
+
+  if (!String(roleColumns[0]?.Type ?? '').includes("'prof'")) {
+    await getPool().query(
+      "ALTER TABLE accounts MODIFY COLUMN role ENUM('admin', 'staff', 'prof', 'student') NOT NULL DEFAULT 'student'",
+    );
   }
 
   await getPool().query(`
@@ -97,9 +107,20 @@ export async function ensureMysqlSchema() {
       start_date DATE NOT NULL,
       end_date DATE NOT NULL,
       classes_count INT NOT NULL DEFAULT 0,
+      class_name VARCHAR(150) NOT NULL DEFAULT 'All sections',
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const [examClassColumns] = await getPool().query<RowDataPacket[]>(
+    "SHOW COLUMNS FROM exams LIKE 'class_name'",
+  );
+
+  if (examClassColumns.length === 0) {
+    await getPool().query(
+      "ALTER TABLE exams ADD COLUMN class_name VARCHAR(150) NOT NULL DEFAULT 'All sections' AFTER classes_count",
+    );
+  }
 
   await getPool().query(`
     CREATE TABLE IF NOT EXISTS announcements (

@@ -3,7 +3,7 @@ import { getAccounts, updateAccount } from '@/lib/server-accounts';
 import { AccountRole, AccountStatus } from '@/lib/auth-types';
 
 function isRole(role: unknown): role is AccountRole {
-  return role === 'admin' || role === 'staff' || role === 'student';
+  return role === 'admin' || role === 'staff' || role === 'prof' || role === 'student';
 }
 
 function isStatus(status: unknown): status is AccountStatus {

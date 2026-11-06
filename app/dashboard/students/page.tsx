@@ -28,7 +28,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Search, Plus, MoreHorizontal, Edit2, Trash2 } from 'lucide-react';
 import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-client';
+import { classSections, getDiplomaLevel, type DiplomaLevel } from '@/lib/class-sections';
 import { useLanguage } from '@/lib/language-context';
+import { useRoleAccess } from '@/lib/use-role-access';
 
 type Student = {
   id?: number;
@@ -42,8 +44,10 @@ const emptyStudent: Student = { name: '', email: '', class: '', enrollment: '' }
 
 export default function StudentsPage() {
   const { t } = useLanguage();
+  const { canManage } = useRoleAccess();
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState<DiplomaLevel | 'All'>('All');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Student>(emptyStudent);
@@ -61,6 +65,9 @@ export default function StudentsPage() {
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.class.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+  const sectionFilteredStudents = filteredStudents.filter((student) =>
+    selectedLevel === 'All' || getDiplomaLevel(student.class) === selectedLevel,
   );
 
   const handleSaveStudent = async (event: React.FormEvent) => {
@@ -92,10 +99,10 @@ export default function StudentsPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">{t('Students Management')}</h1>
-          <p className="text-muted-foreground">{t('Manage student records and enrollment')}</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t(canManage ? 'Students Management' : 'Students')}</h1>
+          <p className="text-muted-foreground">{t(canManage ? 'Manage student records and enrollment' : 'Browse students by program')}</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {canManage && <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={handleReset} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
               <Plus className="w-4 h-4" />
@@ -137,13 +144,25 @@ export default function StudentsPage() {
               <FieldGroup>
                 <Field>
                   <FieldLabel>{t('Class')}</FieldLabel>
-                  <Input
-                    placeholder={t('e.g., 10-A')}
+                  <select
                     value={formData.class}
                     onChange={(event) => setFormData({ ...formData, class: event.target.value })}
                     required
-                    className="bg-background text-foreground"
-                  />
+                    className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
+                  >
+                    <option value="">{t('Select Class')}</option>
+                    {formData.class && getDiplomaLevel(formData.class) === null && (
+                      <option value={formData.class}>{formData.class}</option>
+                    )}
+                    {classSections.map(({ level, programs }) => (
+                      <optgroup key={level} label={level}>
+                        {programs.map((program) => {
+                          const className = `${level} ${program}`;
+                          return <option key={className} value={className}>{className}</option>;
+                        })}
+                      </optgroup>
+                    ))}
+                  </select>
                 </Field>
               </FieldGroup>
               <FieldGroup>
@@ -176,7 +195,21 @@ export default function StudentsPage() {
               </div>
             </form>
           </DialogContent>
-        </Dialog>
+        </Dialog>}
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        {(['All', ...classSections.map(({ level }) => level)] as const).map((level) => (
+          <Button
+            key={level}
+            type="button"
+            variant={selectedLevel === level ? 'default' : 'outline'}
+            onClick={() => setSelectedLevel(level)}
+            className={selectedLevel === level ? '' : 'text-foreground border-border'}
+          >
+            {level === 'All' ? t('All Classes') : level}
+          </Button>
+        ))}
       </div>
 
       <Card className="bg-card border border-border p-4 mb-6">
@@ -200,18 +233,18 @@ export default function StudentsPage() {
               <TableHead className="text-foreground font-semibold">{t('Class')}</TableHead>
               <TableHead className="text-foreground font-semibold">{t('Email')}</TableHead>
               <TableHead className="text-foreground font-semibold">{t('Enrollment Date')}</TableHead>
-              <TableHead className="text-foreground font-semibold text-right">{t('Actions')}</TableHead>
+              {canManage && <TableHead className="text-foreground font-semibold text-right">{t('Actions')}</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredStudents.length > 0 ? (
-              filteredStudents.map((student) => (
+            {sectionFilteredStudents.length > 0 ? (
+              sectionFilteredStudents.map((student) => (
                 <TableRow key={student.id} className="hover:bg-background/50 border-b border-border">
                   <TableCell className="font-medium text-foreground">{student.name}</TableCell>
                   <TableCell className="text-foreground">{student.class}</TableCell>
                   <TableCell className="text-muted-foreground">{student.email}</TableCell>
                   <TableCell className="text-muted-foreground">{student.enrollment}</TableCell>
-                  <TableCell className="text-right">
+                  {canManage && <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="text-foreground">
@@ -235,12 +268,12 @@ export default function StudentsPage() {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </TableCell>
+                  </TableCell>}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={canManage ? 5 : 4} className="text-center py-8 text-muted-foreground">
                   {t('No students found')}
                 </TableCell>
               </TableRow>
@@ -250,7 +283,7 @@ export default function StudentsPage() {
       </Card>
 
       <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
-        <span>{t('Total Students:')} <strong className="text-foreground">{filteredStudents.length}</strong></span>
+        <span>{t('Total Students:')} <strong className="text-foreground">{sectionFilteredStudents.length}</strong></span>
       </div>
     </div>
   );

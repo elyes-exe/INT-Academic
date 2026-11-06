@@ -15,7 +15,9 @@ import {
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field';
 import { Plus, Trash2 } from 'lucide-react';
 import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-client';
+import { classSections, classSectionOptions, legacyClassOptions } from '@/lib/class-sections';
 import { useLanguage } from '@/lib/language-context';
+import { useRoleAccess } from '@/lib/use-role-access';
 
 type TimetableEntry = {
   id?: number;
@@ -27,7 +29,7 @@ type TimetableEntry = {
   classroom: string;
 };
 
-const classes = ['10-A', '10-B', '10-C', '11-A', '11-B', '9-A', '9-B'];
+const legacyClasses = legacyClassOptions;
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const timeSlots = [
   '09:00 - 10:00',
@@ -39,7 +41,7 @@ const timeSlots = [
 ];
 
 const emptyEntry: TimetableEntry = {
-  className: '10-A',
+  className: classSectionOptions[0],
   day: 'Monday',
   time: '',
   subject: '',
@@ -49,7 +51,8 @@ const emptyEntry: TimetableEntry = {
 
 export default function TimetablePage() {
   const { t } = useLanguage();
-  const [selectedClass, setSelectedClass] = useState('10-A');
+  const { canManage } = useRoleAccess();
+  const [selectedClass, setSelectedClass] = useState(classSectionOptions[0]);
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<TimetableEntry>(emptyEntry);
@@ -66,6 +69,11 @@ export default function TimetablePage() {
     () => entries.filter((entry) => entry.className === selectedClass),
     [entries, selectedClass],
   );
+  const availableClasses = Array.from(new Set([
+    ...classSectionOptions,
+    ...legacyClasses,
+    ...entries.map((entry) => entry.className),
+  ]));
 
   const handleAddSlot = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -84,10 +92,10 @@ export default function TimetablePage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">{t('Timetable Management')}</h1>
-          <p className="text-muted-foreground">{t('View and manage class schedules')}</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t(canManage ? 'Timetable Management' : 'Timetable')}</h1>
+          <p className="text-muted-foreground">{t(canManage ? 'View and manage class schedules' : 'View class schedules')}</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {canManage && <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button
               onClick={() => setFormData({ ...emptyEntry, className: selectedClass })}
@@ -178,26 +186,35 @@ export default function TimetablePage() {
               </div>
             </form>
           </DialogContent>
-        </Dialog>
+        </Dialog>}
       </div>
 
       <Card className="bg-card border border-border p-6 mb-6">
         <h3 className="text-sm font-semibold text-foreground mb-4">{t('Select Class')}</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-          {classes.map((cls) => (
-            <button
-              key={cls}
-              onClick={() => setSelectedClass(cls)}
-              className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
-                selectedClass === cls
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-background text-foreground hover:bg-secondary'
-              }`}
-            >
-              {cls}
-            </button>
+        <select
+          value={selectedClass}
+          onChange={(event) => setSelectedClass(event.target.value)}
+          className="w-full max-w-xl px-3 py-2 rounded-lg bg-background text-foreground border border-border"
+        >
+          {classSections.map(({ level, programs }) => (
+            <optgroup key={level} label={level}>
+              {programs.map((program) => {
+                const className = `${level} ${program}`;
+                return <option key={className} value={className}>{className}</option>;
+              })}
+            </optgroup>
           ))}
-        </div>
+          {legacyClasses.length > 0 && (
+            <optgroup label={t('Legacy Classes')}>
+              {availableClasses.filter((className) => legacyClasses.includes(className)).map((className) => (
+                <option key={className} value={className}>{className}</option>
+              ))}
+            </optgroup>
+          )}
+          {availableClasses.filter((className) => !classSectionOptions.includes(className) && !legacyClasses.includes(className)).map((className) => (
+            <option key={className} value={className}>{className}</option>
+          ))}
+        </select>
       </Card>
 
       <Card className="bg-card border border-border overflow-x-auto">
@@ -228,9 +245,9 @@ export default function TimetablePage() {
                               <p className="text-xs text-muted-foreground mt-1">{session.teacher}</p>
                               <p className="text-xs text-muted-foreground">{t('Room')} {session.classroom}</p>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={() => session.id && handleDelete(session.id)}>
+                            {canManage && <Button variant="ghost" size="sm" onClick={() => session.id && handleDelete(session.id)}>
                               <Trash2 className="w-3 h-3 text-destructive" />
-                            </Button>
+                            </Button>}
                           </div>
                         </div>
                       ) : (

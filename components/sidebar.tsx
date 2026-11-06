@@ -25,13 +25,13 @@ type NavItem = {
   href: string;
   icon: LucideIcon;
   adminOnly?: boolean;
-  hideFromStudents?: boolean;
+  managerOnly?: boolean;
 };
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Students', href: '/dashboard/students', icon: Users },
-  { label: 'Staff', href: '/dashboard/staff', icon: UserCheck, hideFromStudents: true },
+  { label: 'Staff', href: '/dashboard/staff', icon: UserCheck, managerOnly: true },
   { label: 'Timetable', href: '/dashboard/timetable', icon: Calendar },
   { label: 'Classrooms', href: '/dashboard/classrooms', icon: DoorOpen },
   { label: 'Exams', href: '/dashboard/exams', icon: FileText },
@@ -68,7 +68,7 @@ export function Sidebar() {
       return false;
     }
 
-    if (item.hideFromStudents && (!account || account.role === 'student')) {
+    if (item.managerOnly && account?.role !== 'admin' && account?.role !== 'staff') {
       return false;
     }
 

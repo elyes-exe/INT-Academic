@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { getCurrentAccount, updateAccountProfile } from '@/lib/local-auth';
 import type { Account } from '@/lib/local-auth';
 import { useLanguage } from '@/lib/language-context';
+import { useRoleAccess } from '@/lib/use-role-access';
 
 type Preferences = {
   notifications: boolean;
@@ -37,6 +38,7 @@ const defaultSystemSettings: SystemSettings = {
 
 export default function SettingsPage() {
   const { t } = useLanguage();
+  const { role } = useRoleAccess();
   const [account, setAccount] = useState<Account | null>(null);
   const [profile, setProfile] = useState({ fullName: '', phone: '' });
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(defaultSystemSettings);
@@ -213,7 +215,7 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        <Card className="bg-card border border-border p-6">
+        {role === 'admin' && <Card className="bg-card border border-border p-6">
           <div className="flex items-center gap-3 mb-6">
             <Users className="w-5 h-5 text-primary" />
             <h2 className="text-xl font-bold text-foreground">{t('User Management')}</h2>
@@ -226,7 +228,7 @@ export default function SettingsPage() {
               <Link href="/dashboard/accounts">{t('Set User Permissions')}</Link>
             </Button>
           </div>
-        </Card>
+        </Card>}
 
         <Card className="bg-card border border-border p-6">
           <div className="flex items-center gap-3 mb-6">

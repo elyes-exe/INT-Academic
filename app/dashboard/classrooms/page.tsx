@@ -15,6 +15,7 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Plus, Users, MapPin, BookOpen, Trash2 } from 'lucide-react';
 import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-client';
 import { useLanguage } from '@/lib/language-context';
+import { useRoleAccess } from '@/lib/use-role-access';
 
 type Classroom = {
   id?: number;
@@ -33,6 +34,7 @@ const emptyClassroom: Classroom = {
 
 export default function ClassroomsPage() {
   const { t } = useLanguage();
+  const { canManage } = useRoleAccess();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -75,10 +77,10 @@ export default function ClassroomsPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">{t('Classrooms Management')}</h1>
-          <p className="text-muted-foreground">{t('Manage classroom resources and assignments')}</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t(canManage ? 'Classrooms Management' : 'Classrooms')}</h1>
+          <p className="text-muted-foreground">{t(canManage ? 'Manage classroom resources and assignments' : 'View classroom resources and assignments')}</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {canManage && <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
               <Plus className="w-4 h-4" />
@@ -122,7 +124,7 @@ export default function ClassroomsPage() {
               </div>
             </form>
           </DialogContent>
-        </Dialog>
+        </Dialog>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -140,9 +142,9 @@ export default function ClassroomsPage() {
                     <span>{classroom.floor}</span>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => classroom.id && handleDelete(classroom.id)}>
+                {canManage && <Button variant="ghost" size="sm" onClick={() => classroom.id && handleDelete(classroom.id)}>
                   <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
+                </Button>}
               </div>
 
               <div className="space-y-3">
@@ -170,9 +172,9 @@ export default function ClassroomsPage() {
                 </div>
               </div>
 
-              <Button variant="outline" onClick={() => handleEdit(classroom)} className="w-full mt-4 text-foreground border-border hover:bg-secondary">
+              {canManage && <Button variant="outline" onClick={() => handleEdit(classroom)} className="w-full mt-4 text-foreground border-border hover:bg-secondary">
                 {t('Edit Details')}
-              </Button>
+              </Button>}
             </Card>
           );
         })}

@@ -23,6 +23,7 @@ import {
 import { Plus, MoreHorizontal, Trash2, Calendar } from 'lucide-react';
 import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-client';
 import { useLanguage } from '@/lib/language-context';
+import { useRoleAccess } from '@/lib/use-role-access';
 
 type Announcement = {
   id?: number;
@@ -46,6 +47,7 @@ const priorityOptions = ['Low', 'Normal', 'Medium', 'High'];
 
 export default function AnnouncementsPage() {
   const { t } = useLanguage();
+  const { canManage } = useRoleAccess();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -122,7 +124,7 @@ export default function AnnouncementsPage() {
           <h1 className="text-3xl font-bold text-foreground mb-2">{t('Announcements')}</h1>
           <p className="text-muted-foreground">{t('Create and manage institution announcements')}</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {canManage && <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={handleReset} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
               <Plus className="w-4 h-4" />
@@ -212,7 +214,7 @@ export default function AnnouncementsPage() {
               </div>
             </form>
           </DialogContent>
-        </Dialog>
+        </Dialog>}
       </div>
 
       <div className="space-y-4">
@@ -233,7 +235,7 @@ export default function AnnouncementsPage() {
                   <Badge className={getTargetColor(announcement.target)}>{t(announcement.target)}</Badge>
                 </div>
               </div>
-              <DropdownMenu>
+              {canManage && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="text-foreground">
                     <MoreHorizontal className="w-4 h-4" />
@@ -251,7 +253,7 @@ export default function AnnouncementsPage() {
                     {t('Delete')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
+              </DropdownMenu>}
             </div>
           </Card>
         ))}

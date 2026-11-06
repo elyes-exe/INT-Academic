@@ -14,13 +14,18 @@ const french: Record<string, string> = {
   'Redirecting to login...': 'Redirection vers la connexion…',
   'Manage your academic institution efficiently': 'Gérez efficacement votre établissement scolaire',
   'Manage student records and enrollment': 'Gérez les dossiers et les inscriptions des étudiants',
+  'Browse students by program': 'Parcourez les étudiants par filière',
   'Manage faculty and staff information': 'Gérez les informations du corps enseignant et du personnel',
   'View and manage class schedules': 'Consultez et gérez les emplois du temps des classes',
+  'View class schedules': 'Consultez les emplois du temps des classes',
   'Manage classroom resources and assignments': 'Gérez les salles de classe et leur affectation',
+  'View classroom resources and assignments': 'Consultez les salles de classe et leur affectation',
   'Schedule and manage examinations': 'Planifiez et gérez les examens',
   'Create and manage institution announcements': 'Créez et gérez les annonces de l’établissement',
   'Manage your account information and preferences': 'Gérez les informations et les préférences de votre compte',
   'Classrooms Management': 'Gestion des salles de classe', 'Examination Management': 'Gestion des examens',
+  'Exam Schedule': 'Calendrier des examens', 'View scheduled exams by class': 'Consultez les examens planifiés par classe',
+  'All Classes': 'Toutes les classes', 'All sections': 'Toutes les filières', 'Legacy Classes': 'Anciennes classes',
   'Timetable Management': 'Gestion des emplois du temps', 'Students Management': 'Gestion des étudiants',
   'Staff Management': 'Gestion du personnel', 'Account Moderation': 'Gestion des comptes',
   'Verify student signups and adjust account roles': 'Vérifiez les inscriptions des étudiants et modifiez les rôles des comptes',
@@ -99,7 +104,7 @@ const french: Record<string, string> = {
   'View Details': 'Voir les détails', Planned: 'Prévu', Scheduled: 'Planifié', Completed: 'Terminé',
   to: 'au', classes: 'classes', 'No accounts found': 'Aucun compte trouvé', Account: 'Compte',
   Verify: 'Vérifier', Reject: 'Refuser', pending: 'en attente', verified: 'vérifié', rejected: 'refusé',
-  student: 'Étudiant', staff: 'Personnel', admin: 'Administrateur', 'Add Schedule': 'Ajouter un cours',
+  student: 'Étudiant', prof: 'Professeur', staff: 'Personnel', admin: 'Administrateur', 'Add Schedule': 'Ajouter un cours',
   'sessions scheduled': 'cours planifiés', Monday: 'Lundi', Tuesday: 'Mardi', Wednesday: 'Mercredi',
   Thursday: 'Jeudi', Friday: 'Vendredi', 'Teacher name': 'Nom de l’enseignant', 'e.g., Mathematics': 'Ex. : mathématiques',
   'e.g., 101': 'Ex. : 101', 'Create New Announcement': 'Créer une annonce', 'Edit Announcement': 'Modifier l’annonce',
@@ -182,7 +187,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     applyDocumentLanguage(nextLanguage);
     try { window.localStorage.setItem('int-app-language', nextLanguage); } catch { /* Keep it for this session. */ }
   }, []);
-  const t = useCallback((text: string) => language === 'fr' ? french[text] ?? text : text, [language]);
+  const t = useCallback((text: string) => {
+    if (language === 'fr') return french[text] ?? text;
+    return text === 'prof' ? 'Professor' : text;
+  }, [language]);
   const value = useMemo(() => ({ language, setLanguage, t }), [language, setLanguage, t]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

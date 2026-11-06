@@ -38,7 +38,7 @@ import {
 } from '@/lib/local-auth';
 import { useLanguage } from '@/lib/language-context';
 
-const roleOptions: AccountRole[] = ['student', 'staff', 'admin'];
+const roleOptions: AccountRole[] = ['student', 'prof', 'staff', 'admin'];
 const statusOptions: AccountStatus[] = ['pending', 'verified', 'rejected'];
 
 function statusBadgeClass(status: AccountStatus) {

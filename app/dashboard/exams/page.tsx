@@ -15,7 +15,9 @@ import {
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Plus, Calendar, Users, Trash2 } from 'lucide-react';
 import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-client';
+import { classSections, classSectionOptions } from '@/lib/class-sections';
 import { useLanguage } from '@/lib/language-context';
+import { useRoleAccess } from '@/lib/use-role-access';
 
 type Exam = {
   id?: number;
@@ -24,6 +26,7 @@ type Exam = {
   startDate: string;
   endDate: string;
   classes: number;
+  className: string;
 };
 
 const emptyExam: Exam = {
@@ -32,13 +35,16 @@ const emptyExam: Exam = {
   startDate: '',
   endDate: '',
   classes: 0,
+  className: 'All sections',
 };
 
 const statuses = ['Planned', 'Scheduled', 'Completed'];
 
 export default function ExamsPage() {
   const { t } = useLanguage();
+  const { canManage } = useRoleAccess();
   const [exams, setExams] = useState<Exam[]>([]);
+  const [selectedClass, setSelectedClass] = useState('All sections');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Exam>(emptyExam);
@@ -71,6 +77,10 @@ export default function ExamsPage() {
     await loadExams();
   };
 
+  const visibleExams = selectedClass === 'All sections'
+    ? exams
+    : exams.filter((exam) => !exam.className || exam.className === 'All sections' || exam.className === selectedClass);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Scheduled':
@@ -88,10 +98,10 @@ export default function ExamsPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">{t('Examination Management')}</h1>
-          <p className="text-muted-foreground">{t('Schedule and manage examinations')}</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t(canManage ? 'Examination Management' : 'Exam Schedule')}</h1>
+          <p className="text-muted-foreground">{t(canManage ? 'Schedule and manage examinations' : 'View scheduled exams by class')}</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {canManage && <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => { setFormData(emptyExam); setEditingId(null); }} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
               <Plus className="w-4 h-4" />
@@ -107,6 +117,29 @@ export default function ExamsPage() {
                 <Field>
                   <FieldLabel>{t('Name')}</FieldLabel>
                   <Input value={formData.name} onChange={(event) => setFormData({ ...formData, name: event.target.value })} required />
+                </Field>
+              </FieldGroup>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel>{t('Class')}</FieldLabel>
+                  <select
+                    value={formData.className}
+                    onChange={(event) => setFormData({ ...formData, className: event.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
+                  >
+                    <option value="All sections">{t('All sections')}</option>
+                    {classSections.map(({ level, programs }) => (
+                      <optgroup key={level} label={level}>
+                        {programs.map((program) => {
+                          const className = `${level} ${program}`;
+                          return <option key={className} value={className}>{className}</option>;
+                        })}
+                      </optgroup>
+                    ))}
+                    {formData.className && formData.className !== 'All sections' && !classSectionOptions.includes(formData.className) && (
+                      <option value={formData.className}>{formData.className}</option>
+                    )}
+                  </select>
                 </Field>
               </FieldGroup>
               <FieldGroup>
@@ -143,11 +176,31 @@ export default function ExamsPage() {
               </div>
             </form>
           </DialogContent>
-        </Dialog>
+        </Dialog>}
+      </div>
+
+      <div className="mb-6 max-w-xl">
+        <label className="block text-sm font-medium text-foreground mb-2" htmlFor="exam-class-filter">{t('Select Class')}</label>
+        <select
+          id="exam-class-filter"
+          value={selectedClass}
+          onChange={(event) => setSelectedClass(event.target.value)}
+          className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
+        >
+          <option value="All sections">{t('All sections')}</option>
+          {classSections.map(({ level, programs }) => (
+            <optgroup key={level} label={level}>
+              {programs.map((program) => {
+                const className = `${level} ${program}`;
+                return <option key={className} value={className}>{className}</option>;
+              })}
+            </optgroup>
+          ))}
+        </select>
       </div>
 
       <div className="space-y-4">
-        {exams.map((exam) => (
+        {visibleExams.map((exam) => (
           <Card key={exam.id} className="bg-card border border-border p-6 hover:border-primary/30 transition-colors">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -156,6 +209,10 @@ export default function ExamsPage() {
                   <Badge className={getStatusColor(exam.status)}>{t(exam.status)}</Badge>
                 </div>
                 <div className="flex flex-wrap gap-4 mt-4">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{t(exam.className || 'All sections')}</span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">{exam.startDate} {t('to')} {exam.endDate}</span>
@@ -166,14 +223,14 @@ export default function ExamsPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2">
+              {canManage && <div className="flex gap-2">
                 <Button variant="outline" onClick={() => handleEdit(exam)} className="text-foreground border-border hover:bg-secondary">
                   {t('View Details')}
                 </Button>
                 <Button variant="ghost" onClick={() => exam.id && handleDelete(exam.id)}>
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
-              </div>
+              </div>}
             </div>
           </Card>
         ))}

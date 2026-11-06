@@ -367,7 +367,7 @@ export async function mergeAccounts(accountsToMerge: Account[]) {
       continue;
     }
 
-    const safeRole: AccountRole = ['admin', 'staff', 'student'].includes(account.role)
+    const safeRole: AccountRole = ['admin', 'staff', 'prof', 'student'].includes(account.role)
       ? account.role
       : 'student';
     const safeStatus: AccountStatus = ['pending', 'verified', 'rejected'].includes(account.status)
