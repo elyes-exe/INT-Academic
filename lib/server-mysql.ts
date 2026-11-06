@@ -210,7 +210,8 @@ export async function ensureMysqlSchema() {
       await migrationConnection.execute(
         `DELETE FROM accounts
          WHERE id IN ('demo-admin', 'demo-staff-account', 'demo-student-account')
-            OR email IN ('admin@int.edu', 'staff.demo@int.edu', 'student.demo@int.edu', 'nadia.staff.demo@int.edu')`,
+            OR (email = 'admin@int.edu' AND password = 'admin123')
+            OR email IN ('staff.demo@int.edu', 'student.demo@int.edu', 'nadia.staff.demo@int.edu')`,
       );
       await migrationConnection.execute(
         "DELETE FROM students WHERE name LIKE '%demo%' OR email LIKE '%demo%' OR class_name LIKE '%demo%'",
