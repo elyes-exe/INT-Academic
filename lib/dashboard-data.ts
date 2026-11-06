@@ -182,7 +182,8 @@ export async function listResource(resource: string, studentClass?: string) {
 
   await ensureMysqlSchema();
 
-  const [rows] = studentClass !== undefined && resource === 'students'
+  const classScopedStudentResources = ['students', 'timetable', 'exams'];
+  const [rows] = studentClass !== undefined && classScopedStudentResources.includes(resource)
     ? await getMysqlPool().execute<RowDataPacket[]>(
         `SELECT * FROM ${config.table} WHERE class_name = ? ORDER BY ${config.orderBy}`,
         [studentClass],

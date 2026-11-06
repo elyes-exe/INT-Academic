@@ -21,6 +21,8 @@ const french: Record<string, string> = {
   'All BTS classes': 'Toutes les classes BTS', 'All BTP classes': 'Toutes les classes BTP',
   'All CAP classes': 'Toutes les classes CAP',
   'Your assigned class': 'Votre classe', 'Assign class': 'Affecter une classe',
+  'Your section': 'Votre section', 'Loading class...': 'Chargement de la classe…',
+  'No exams scheduled for your section.': 'Aucun examen n’est planifié pour votre section.',
   Unassigned: 'Non affecté', 'Assign a class before verifying': 'Affectez une classe avant de vérifier le compte',
   'Manage faculty and staff information': 'Gérez les informations du corps enseignant et du personnel',
   'View and manage class schedules': 'Consultez et gérez les emplois du temps des classes',

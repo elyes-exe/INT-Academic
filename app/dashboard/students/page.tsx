@@ -54,7 +54,7 @@ const emptyStudent: Student = { name: '', email: '', class: '', enrollment: '' }
 
 export default function StudentsPage() {
   const { t } = useLanguage();
-  const { canManage } = useRoleAccess();
+  const { canManage, role } = useRoleAccess();
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSection, setSelectedSection] = useState('All');
@@ -223,7 +223,7 @@ export default function StudentsPage() {
         </Dialog>}
       </div>
 
-      <Card className="bg-card border border-border p-4 mb-6">
+      {role !== null && role !== 'student' && <Card className="bg-card border border-border p-4 mb-6">
         <div className="mb-2 text-sm font-medium text-foreground">{t('Filter by section or class')}</div>
         <Select value={selectedSection} onValueChange={setSelectedSection}>
           <SelectTrigger className="w-full max-w-2xl bg-background text-foreground">
@@ -246,7 +246,7 @@ export default function StudentsPage() {
             ))}
           </SelectContent>
         </Select>
-      </Card>
+      </Card>}
 
       <Card className="bg-card border border-border p-4 mb-6">
         <div className="relative">

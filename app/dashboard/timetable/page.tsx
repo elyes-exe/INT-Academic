@@ -18,6 +18,7 @@ import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-cli
 import { classSections, classSectionOptions, getDiplomaLevel } from '@/lib/class-sections';
 import { useLanguage } from '@/lib/language-context';
 import { useRoleAccess } from '@/lib/use-role-access';
+import { getCurrentAccount } from '@/lib/local-auth';
 
 type TimetableEntry = {
   id?: number;
@@ -50,14 +51,24 @@ const emptyEntry: TimetableEntry = {
 
 export default function TimetablePage() {
   const { t } = useLanguage();
-  const { canManage } = useRoleAccess();
+  const { canManage, role } = useRoleAccess();
   const [selectedClass, setSelectedClass] = useState(classSectionOptions[0]);
+  const [assignedClass, setAssignedClass] = useState('');
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<TimetableEntry>(emptyEntry);
 
   const loadEntries = async () => {
-    setEntries(await fetchResource<TimetableEntry>('timetable'));
+    const [nextEntries, account] = await Promise.all([
+      fetchResource<TimetableEntry>('timetable'),
+      getCurrentAccount(),
+    ]);
+    setEntries(nextEntries);
+    if (account?.role === 'student') {
+      const studentClass = account.className ?? '';
+      setAssignedClass(studentClass);
+      setSelectedClass(studentClass);
+    }
   };
 
   useEffect(() => {
@@ -187,25 +198,32 @@ export default function TimetablePage() {
         </Dialog>}
       </div>
 
-      <Card className="bg-card border border-border p-6 mb-6">
-        <h3 className="text-sm font-semibold text-foreground mb-4">{t('Select Class')}</h3>
-        <select
-          value={selectedClass}
-          onChange={(event) => setSelectedClass(event.target.value)}
-          className="w-full max-w-xl px-3 py-2 rounded-lg bg-background text-foreground border border-border"
-        >
-          {classSections.map(({ level }) => (
-            <optgroup key={level} label={level}>
-              {classSectionOptions.filter((className) => getDiplomaLevel(className) === level).map((className) => (
-                <option key={className} value={className}>{className}</option>
-              ))}
-            </optgroup>
-          ))}
-          {availableClasses.filter((className) => !classSectionOptions.includes(className)).map((className) => (
-            <option key={className} value={className}>{className}</option>
-          ))}
-        </select>
-      </Card>
+      {role === 'student' ? (
+        <Card className="bg-card border border-border p-6 mb-6">
+          <h3 className="text-sm font-semibold text-foreground mb-2">{t('Your section')}</h3>
+          <p className="text-foreground">{assignedClass || t('Loading class...')}</p>
+        </Card>
+      ) : role !== null && (
+        <Card className="bg-card border border-border p-6 mb-6">
+          <h3 className="text-sm font-semibold text-foreground mb-4">{t('Select Class')}</h3>
+          <select
+            value={selectedClass}
+            onChange={(event) => setSelectedClass(event.target.value)}
+            className="w-full max-w-xl px-3 py-2 rounded-lg bg-background text-foreground border border-border"
+          >
+            {classSections.map(({ level }) => (
+              <optgroup key={level} label={level}>
+                {classSectionOptions.filter((className) => getDiplomaLevel(className) === level).map((className) => (
+                  <option key={className} value={className}>{className}</option>
+                ))}
+              </optgroup>
+            ))}
+            {availableClasses.filter((className) => !classSectionOptions.includes(className)).map((className) => (
+              <option key={className} value={className}>{className}</option>
+            ))}
+          </select>
+        </Card>
+      )}
 
       <Card className="bg-card border border-border overflow-x-auto">
         <table className="w-full">

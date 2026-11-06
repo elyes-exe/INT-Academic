@@ -71,6 +71,8 @@ export default function Dashboard() {
   const { language, t } = useLanguage();
   const [summary, setSummary] = useState<DashboardSummary>(defaultSummary);
   const [accountRole, setAccountRole] = useState<AccountRole | null>(null);
+  const [studentName, setStudentName] = useState('');
+  const [studentClass, setStudentClass] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -78,6 +80,10 @@ export default function Dashboard() {
     getCurrentAccount().then((account) => {
       if (isMounted) {
         setAccountRole(account?.role ?? null);
+        if (account?.role === 'student') {
+          setStudentName(account.fullName);
+          setStudentClass(account.className ?? '');
+        }
       }
     });
 
@@ -117,7 +123,11 @@ export default function Dashboard() {
     <div className="p-8 max-w-6xl">
       <div className="mb-12">
         <h1 className="text-4xl font-bold text-foreground mb-2">{t('Welcome to INT App')}</h1>
-        <p className="text-muted-foreground text-lg">{t('Manage your academic institution efficiently')}</p>
+        <p className="text-muted-foreground text-lg">
+          {accountRole === 'student'
+            ? `${studentName} · ${t('Your section')}: ${studentClass}`
+            : t('Manage your academic institution efficiently')}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

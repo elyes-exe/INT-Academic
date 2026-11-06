@@ -15,9 +15,10 @@ import {
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Plus, Calendar, Users, Trash2 } from 'lucide-react';
 import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-client';
-import { classSections, classSectionOptions } from '@/lib/class-sections';
+import { classSections, classSectionOptions, getDiplomaLevel } from '@/lib/class-sections';
 import { useLanguage } from '@/lib/language-context';
 import { useRoleAccess } from '@/lib/use-role-access';
+import { getCurrentAccount } from '@/lib/local-auth';
 
 type Exam = {
   id?: number;
@@ -42,15 +43,25 @@ const statuses = ['Planned', 'Scheduled', 'Completed'];
 
 export default function ExamsPage() {
   const { t } = useLanguage();
-  const { canManage } = useRoleAccess();
+  const { canManage, role } = useRoleAccess();
   const [exams, setExams] = useState<Exam[]>([]);
   const [selectedClass, setSelectedClass] = useState('All sections');
+  const [assignedClass, setAssignedClass] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Exam>(emptyExam);
 
   const loadExams = async () => {
-    setExams(await fetchResource<Exam>('exams'));
+    const [nextExams, account] = await Promise.all([
+      fetchResource<Exam>('exams'),
+      getCurrentAccount(),
+    ]);
+    setExams(nextExams);
+    if (account?.role === 'student') {
+      const studentClass = account.className ?? '';
+      setAssignedClass(studentClass);
+      setSelectedClass(studentClass);
+    }
   };
 
   useEffect(() => {
@@ -77,7 +88,9 @@ export default function ExamsPage() {
     await loadExams();
   };
 
-  const visibleExams = selectedClass === 'All sections'
+  const visibleExams = role === 'student'
+    ? exams.filter((exam) => exam.className === assignedClass)
+    : selectedClass === 'All sections'
     ? exams
     : exams.filter((exam) => !exam.className || exam.className === 'All sections' || exam.className === selectedClass);
 
@@ -128,12 +141,11 @@ export default function ExamsPage() {
                     className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
                   >
                     <option value="All sections">{t('All sections')}</option>
-                    {classSections.map(({ level, programs }) => (
+                    {classSections.map(({ level }) => (
                       <optgroup key={level} label={level}>
-                        {programs.map((program) => {
-                          const className = `${level} ${program}`;
-                          return <option key={className} value={className}>{className}</option>;
-                        })}
+                        {classSectionOptions.filter((className) => getDiplomaLevel(className) === level).map((className) => (
+                          <option key={className} value={className}>{className}</option>
+                        ))}
                       </optgroup>
                     ))}
                     {formData.className && formData.className !== 'All sections' && !classSectionOptions.includes(formData.className) && (
@@ -179,27 +191,36 @@ export default function ExamsPage() {
         </Dialog>}
       </div>
 
-      <div className="mb-6 max-w-xl">
-        <label className="block text-sm font-medium text-foreground mb-2" htmlFor="exam-class-filter">{t('Select Class')}</label>
-        <select
-          id="exam-class-filter"
-          value={selectedClass}
-          onChange={(event) => setSelectedClass(event.target.value)}
-          className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
-        >
-          <option value="All sections">{t('All sections')}</option>
-          {classSections.map(({ level, programs }) => (
-            <optgroup key={level} label={level}>
-              {programs.map((program) => {
-                const className = `${level} ${program}`;
-                return <option key={className} value={className}>{className}</option>;
-              })}
-            </optgroup>
-          ))}
-        </select>
-      </div>
+      {role === 'student' ? (
+        <div className="mb-6 rounded-lg border border-border bg-card p-4">
+          <p className="text-sm font-medium text-muted-foreground">{t('Your section')}</p>
+          <p className="mt-1 text-foreground">{assignedClass || t('Loading class...')}</p>
+        </div>
+      ) : role !== null && (
+        <div className="mb-6 max-w-xl">
+          <label className="block text-sm font-medium text-foreground mb-2" htmlFor="exam-class-filter">{t('Select Class')}</label>
+          <select
+            id="exam-class-filter"
+            value={selectedClass}
+            onChange={(event) => setSelectedClass(event.target.value)}
+            className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
+          >
+            <option value="All sections">{t('All sections')}</option>
+            {classSections.map(({ level }) => (
+              <optgroup key={level} label={level}>
+                {classSectionOptions.filter((className) => getDiplomaLevel(className) === level).map((className) => (
+                  <option key={className} value={className}>{className}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="space-y-4">
+        {role === 'student' && visibleExams.length === 0 && (
+          <p className="py-8 text-center text-muted-foreground">{t('No exams scheduled for your section.')}</p>
+        )}
         {visibleExams.map((exam) => (
           <Card key={exam.id} className="bg-card border border-border p-6 hover:border-primary/30 transition-colors">
             <div className="flex items-start justify-between">
