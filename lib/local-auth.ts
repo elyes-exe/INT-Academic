@@ -12,9 +12,7 @@ type CreateAccountResult =
   | { success: true; account: Account }
   | { success: false; message: string };
 
-const ACCOUNTS_KEY = 'intAccounts';
 const SESSION_KEY = 'intCurrentUser';
-const MIGRATION_KEY = 'intAccountsMigratedToMysql';
 
 function canUseStorage() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
@@ -37,32 +35,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   return data;
 }
 
-async function migrateLegacyAccounts() {
-  if (!canUseStorage() || window.localStorage.getItem(MIGRATION_KEY)) {
-    return;
-  }
-
-  const rawAccounts = window.localStorage.getItem(ACCOUNTS_KEY);
-
-  if (!rawAccounts) {
-    window.localStorage.setItem(MIGRATION_KEY, 'true');
-    return;
-  }
-
-  try {
-    const accounts = JSON.parse(rawAccounts);
-    await requestJson<{ accounts: Account[] }>('/api/auth/migrate', {
-      method: 'POST',
-      body: JSON.stringify({ accounts }),
-    });
-    window.localStorage.setItem(MIGRATION_KEY, 'true');
-  } catch {
-    // Keep the marker unset so the app can retry migration on the next auth request.
-  }
-}
-
 export async function getAccounts() {
-  await migrateLegacyAccounts();
   const data = await requestJson<{ accounts: Account[] }>('/api/auth/accounts');
   return data.accounts;
 }
@@ -77,8 +50,6 @@ export async function createStudentAccount(input: {
   email: string;
   password: string;
 }): Promise<CreateAccountResult> {
-  await migrateLegacyAccounts();
-
   try {
     const data = await requestJson<{ account: Account }>('/api/auth/signup', {
       method: 'POST',
@@ -95,8 +66,6 @@ export async function createStudentAccount(input: {
 }
 
 export async function signIn(email: string, password: string): Promise<SignInResult> {
-  await migrateLegacyAccounts();
-
   try {
     const data = await requestJson<{ account: Account }>('/api/auth/login', {
       method: 'POST',
@@ -127,8 +96,6 @@ export async function getCurrentAccount() {
   if (!canUseStorage()) {
     return null;
   }
-
-  await migrateLegacyAccounts();
 
   try {
     const rawSession = window.localStorage.getItem(SESSION_KEY);

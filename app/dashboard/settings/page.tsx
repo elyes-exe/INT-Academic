@@ -27,8 +27,8 @@ type SystemSettings = Preferences & {
 };
 
 const defaultSystemSettings: SystemSettings = {
-  instituteName: 'INT Academy',
-  email: 'admin@int.edu',
+  instituteName: 'INT App',
+  email: '',
   phone: '',
   address: '',
   notifications: true,

@@ -1,5 +1,3 @@
-import { mkdir, readFile, writeFile } from 'fs/promises';
-import path from 'path';
 import { randomBytes, randomUUID } from 'crypto';
 import type { RowDataPacket } from 'mysql2';
 import { Account, AccountRole, AccountStatus } from '@/lib/auth-types';
@@ -25,22 +23,6 @@ type AccountRow = RowDataPacket & {
   status: AccountStatus;
   created_at: Date | string;
   verified_at: Date | string | null;
-};
-
-const dataDir = path.join(process.cwd(), 'data');
-const accountsFile = path.join(dataDir, 'accounts.json');
-
-const demoAdmin: Required<Account> = {
-  id: 'demo-admin',
-  fullName: 'INT Administrator',
-  email: 'admin@int.edu',
-  phone: '',
-  password: 'admin123',
-  role: 'admin',
-  className: '',
-  status: 'verified',
-  createdAt: '2024-01-01T00:00:00.000Z',
-  verifiedAt: '2024-01-01T00:00:00.000Z',
 };
 
 function normalizeEmail(email: string) {
@@ -71,65 +53,8 @@ function accountFromRow(row: AccountRow): Account {
   };
 }
 
-async function ensureFileAccounts() {
-  await mkdir(dataDir, { recursive: true });
-
-  try {
-    await readFile(accountsFile, 'utf8');
-  } catch {
-    await writeFile(accountsFile, JSON.stringify([demoAdmin], null, 2));
-  }
-}
-
-async function readFileAccounts(): Promise<Account[]> {
-  await ensureFileAccounts();
-
-  try {
-    const rawAccounts = await readFile(accountsFile, 'utf8');
-    return JSON.parse(rawAccounts) as Account[];
-  } catch {
-    return [];
-  }
-}
-
-async function ensureAdminAccount() {
-  await ensureMysqlSchema();
-
-  const pool = getMysqlPool();
-  await pool.execute(
-    `
-      INSERT INTO accounts (id, full_name, email, password, role, status, created_at, verified_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE id = id
-    `,
-    [
-      demoAdmin.id,
-      demoAdmin.fullName,
-      demoAdmin.email,
-      demoAdmin.password,
-      demoAdmin.role,
-      demoAdmin.status,
-      mysqlDate(demoAdmin.createdAt),
-      mysqlDate(demoAdmin.verifiedAt),
-    ],
-  );
-}
-
-async function seedFromFileAccounts() {
-  const fileAccounts = await readFileAccounts();
-
-  for (const account of fileAccounts) {
-    if (!account.email || !account.password) {
-      continue;
-    }
-
-    await saveAccount(account, false);
-  }
-}
-
 async function ensureDatabaseReady() {
-  await ensureAdminAccount();
-  await seedFromFileAccounts();
+  await ensureMysqlSchema();
 }
 
 async function saveAccount(account: Account, overwrite = true) {
@@ -380,34 +305,4 @@ export async function updateAccountPassword(emailInput: string, password: string
   await recordActivity('updated', 'Account password', account.fullName);
 
   return getAccountById(account.id);
-}
-
-export async function mergeAccounts(accountsToMerge: Account[]) {
-  await ensureDatabaseReady();
-
-  for (const account of accountsToMerge) {
-    if (!account.email || !account.password) {
-      continue;
-    }
-
-    const safeRole: AccountRole = ['admin', 'staff', 'prof', 'student'].includes(account.role)
-      ? account.role
-      : 'student';
-    const safeStatus: AccountStatus = ['pending', 'verified', 'rejected'].includes(account.status)
-      ? account.status
-      : 'pending';
-
-    await saveAccount(
-      {
-        ...account,
-        email: normalizeEmail(account.email),
-        role: safeRole,
-        status: safeStatus,
-        createdAt: account.createdAt || new Date().toISOString(),
-      },
-      false,
-    );
-  }
-
-  return getAccounts();
 }

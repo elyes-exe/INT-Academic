@@ -50,7 +50,17 @@ Start the development server:
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The app creates its MySQL database and tables when it first connects.
+Open [http://localhost:3000](http://localhost:3000). The app creates its MySQL database and tables when it first connects. It does not create demo accounts or sample academic records; existing real records and database tables are retained.
+
+To grant administrator access, register a real account, then run this statement in phpMyAdmin's SQL tab, replacing the email with that account's address:
+
+```sql
+UPDATE accounts
+SET role = 'admin', status = 'verified', verified_at = NOW()
+WHERE email = 'your-real-email@example.com';
+```
+
+Sign in again after promoting the account.
 
 ## Optional services
 

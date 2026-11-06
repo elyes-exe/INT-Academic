@@ -15,7 +15,7 @@ import {
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field';
 import { Plus, Trash2 } from 'lucide-react';
 import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-client';
-import { classSections, classSectionOptions, legacyClassOptions } from '@/lib/class-sections';
+import { classSections, classSectionOptions, getDiplomaLevel } from '@/lib/class-sections';
 import { useLanguage } from '@/lib/language-context';
 import { useRoleAccess } from '@/lib/use-role-access';
 
@@ -29,7 +29,6 @@ type TimetableEntry = {
   classroom: string;
 };
 
-const legacyClasses = legacyClassOptions;
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const timeSlots = [
   '09:00 - 10:00',
@@ -71,7 +70,6 @@ export default function TimetablePage() {
   );
   const availableClasses = Array.from(new Set([
     ...classSectionOptions,
-    ...legacyClasses,
     ...entries.map((entry) => entry.className),
   ]));
 
@@ -196,22 +194,14 @@ export default function TimetablePage() {
           onChange={(event) => setSelectedClass(event.target.value)}
           className="w-full max-w-xl px-3 py-2 rounded-lg bg-background text-foreground border border-border"
         >
-          {classSections.map(({ level, programs }) => (
+          {classSections.map(({ level }) => (
             <optgroup key={level} label={level}>
-              {programs.map((program) => {
-                const className = `${level} ${program}`;
-                return <option key={className} value={className}>{className}</option>;
-              })}
-            </optgroup>
-          ))}
-          {legacyClasses.length > 0 && (
-            <optgroup label={t('Legacy Classes')}>
-              {availableClasses.filter((className) => legacyClasses.includes(className)).map((className) => (
+              {classSectionOptions.filter((className) => getDiplomaLevel(className) === level).map((className) => (
                 <option key={className} value={className}>{className}</option>
               ))}
             </optgroup>
-          )}
-          {availableClasses.filter((className) => !classSectionOptions.includes(className) && !legacyClasses.includes(className)).map((className) => (
+          ))}
+          {availableClasses.filter((className) => !classSectionOptions.includes(className)).map((className) => (
             <option key={className} value={className}>{className}</option>
           ))}
         </select>

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAccountById, getAccounts, updateAccount } from '@/lib/server-accounts';
 import { AccountRole, AccountStatus } from '@/lib/auth-types';
-import { classSectionOptions, legacyClassOptions } from '@/lib/class-sections';
+import { classSectionOptions } from '@/lib/class-sections';
 import { getAuthSessionAccountId } from '@/lib/server-auth-session';
 
 function isRole(role: unknown): role is AccountRole {
@@ -44,7 +44,7 @@ export async function PATCH(request: Request) {
 
     if (typeof body.className === 'string') {
       const className = body.className.trim();
-      if (className && !classSectionOptions.includes(className) && !legacyClassOptions.includes(className)) {
+      if (className && !classSectionOptions.includes(className)) {
         return NextResponse.json({ message: 'Choose a valid class.' }, { status: 400 });
       }
       changes.className = className;

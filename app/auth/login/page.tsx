@@ -19,7 +19,6 @@ export default function LoginPage() {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [adminCode, setAdminCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -52,30 +51,19 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
 
-    // Validate admin inputs
-    if (!email || !password || !adminCode) {
+    if (!email || !password) {
       setError('Please fill in all fields');
       setIsLoading(false);
       return;
     }
 
-    const validAdminEmail = 'admin@int.edu';
-    const validSecretCode = 'INT2024';
-
-    setTimeout(async () => {
-      if (email === validAdminEmail && adminCode === validSecretCode) {
-        const result = await signIn(email, password);
-
-        if (result.success && result.account.role === 'admin') {
-          router.push('/dashboard');
-        } else {
-          setError(result.success ? 'This account is not an admin account.' : result.message);
-        }
-      } else {
-        setError('Invalid email, password, or secret code');
-      }
-      setIsLoading(false);
-    }, 600);
+    const result = await signIn(email, password);
+    if (result.success && result.account.role === 'admin') {
+      router.push('/dashboard');
+    } else {
+      setError(result.success ? 'This account is not an admin account.' : result.message);
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -222,20 +210,6 @@ export default function LoginPage() {
                   </Field>
                 </FieldGroup>
 
-                <FieldGroup>
-                  <Field>
-                    <FieldLabel>{t('Secret Code')}</FieldLabel>
-                    <Input
-                      type="password"
-                      placeholder={t('Enter secret code')}
-                      value={adminCode}
-                      onChange={(e) => setAdminCode(e.target.value)}
-                      className="bg-secondary text-foreground placeholder:text-muted-foreground border-border"
-                      required
-                    />
-                  </Field>
-                </FieldGroup>
-
                 <div className="flex gap-3">
                   <Button
                     type="button"
@@ -243,7 +217,6 @@ export default function LoginPage() {
                     className="flex-1 border-border"
                     onClick={() => {
                       setShowAdminModal(false);
-                      setAdminCode('');
                       setError('');
                     }}
                   >
@@ -258,14 +231,6 @@ export default function LoginPage() {
                   </Button>
                 </div>
 
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-900 rounded-lg">
-                  <p className="text-xs font-semibold text-blue-900 dark:text-blue-200 mb-2">{t('Demo Admin Credentials:')}</p>
-                  <div className="text-xs text-blue-800 dark:text-blue-300 space-y-1 font-mono">
-                    <p>{t('Email')}: admin@int.edu</p>
-                    <p>{t('Password')}: admin123</p>
-                    <p>{t('Secret Code')}: INT2024</p>
-                  </div>
-                </div>
               </form>
             </Card>
           </div>

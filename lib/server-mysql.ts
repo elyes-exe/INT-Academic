@@ -1,5 +1,5 @@
 import mysql from 'mysql2/promise';
-import type { RowDataPacket } from 'mysql2';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 const databaseName = process.env.MYSQL_DATABASE || 'int_app';
 
@@ -182,15 +182,72 @@ export async function ensureMysqlSchema() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
 
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS app_migrations (
+      name VARCHAR(100) PRIMARY KEY,
+      applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+
   await getPool().execute(
     `
       INSERT INTO institution_settings
         (id, institute_name, email, phone, address, notifications, email_alerts, two_factor)
       VALUES
-        (1, 'INT Academy', 'admin@int.edu', '+1 (555) 123-4567', '123 Education Street, City', TRUE, TRUE, FALSE)
+        (1, 'INT App', '', '', '', TRUE, TRUE, FALSE)
       ON DUPLICATE KEY UPDATE id = id
     `,
   );
+
+  const migrationConnection = await getPool().getConnection();
+  try {
+    await migrationConnection.beginTransaction();
+    const [migration] = await migrationConnection.execute<ResultSetHeader>(
+      "INSERT IGNORE INTO app_migrations (name) VALUES ('remove_seeded_demo_data_v1')",
+    );
+
+    if (migration.affectedRows > 0) {
+      await migrationConnection.execute(
+        `DELETE FROM accounts
+         WHERE id IN ('demo-admin', 'demo-staff-account', 'demo-student-account')
+            OR email IN ('admin@int.edu', 'staff.demo@int.edu', 'student.demo@int.edu', 'nadia.staff.demo@int.edu')`,
+      );
+      await migrationConnection.execute(
+        "DELETE FROM students WHERE name LIKE '%demo%' OR email LIKE '%demo%' OR class_name LIKE '%demo%'",
+      );
+      await migrationConnection.execute(
+        "DELETE FROM staff_members WHERE name LIKE '%demo%' OR email LIKE '%demo%' OR position LIKE '%demo%' OR department LIKE '%demo%'",
+      );
+      await migrationConnection.execute(
+        "DELETE FROM classrooms WHERE name LIKE '%demo%'",
+      );
+      await migrationConnection.execute(
+        "DELETE FROM exams WHERE name LIKE '%demo%' OR class_name LIKE '%demo%'",
+      );
+      await migrationConnection.execute(
+        "DELETE FROM announcements WHERE title LIKE '%demo%' OR content LIKE '%demo%' OR content LIKE '%sample%'",
+      );
+      await migrationConnection.execute(
+        "DELETE FROM timetable_entries WHERE class_name LIKE '%demo%' OR subject LIKE '%demo%' OR teacher LIKE '%demo%' OR classroom LIKE '%demo%'",
+      );
+      await migrationConnection.execute(
+        "DELETE FROM activity_logs WHERE item_label LIKE '%demo%' OR item_label LIKE '%sample%'",
+      );
+      await migrationConnection.execute(
+        `UPDATE institution_settings
+         SET institute_name = 'INT App', email = '', phone = '', address = ''
+         WHERE id = 1 AND email = 'admin@int.edu'
+           AND phone = '+1 (555) 123-4567' AND address = '123 Education Street, City'`,
+      );
+    }
+
+    await migrationConnection.commit();
+  } catch (error) {
+    await migrationConnection.rollback();
+    throw error;
+  } finally {
+    migrationConnection.release();
+  }
 }
 
 export function getMysqlPool() {

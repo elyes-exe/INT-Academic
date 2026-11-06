@@ -46,8 +46,6 @@ export const classSectionOptions: string[] = classSections.flatMap(({ level, pro
   ),
 );
 
-export const legacyClassOptions = ['10-A', '10-B', '10-C', '11-A', '11-B', '9-A', '9-B'];
-
 export function getDiplomaLevel(className: string): DiplomaLevel | null {
   return classSections.find(({ level }) => className.startsWith(`${level} `))?.level ?? null;
 }
