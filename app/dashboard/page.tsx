@@ -191,7 +191,7 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {accountRole === 'admin' && <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-card border border-border p-6 rounded-xl">
           <h2 className="text-lg font-bold text-foreground mb-6">{t('Recent Activity')}</h2>
           {summary.recentActivity.length > 0 ? (
@@ -253,7 +253,7 @@ export default function Dashboard() {
             </div>
           )}
         </Card>
-      </div>
+      </div>}
     </div>
   );
 }
