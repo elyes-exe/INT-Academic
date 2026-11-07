@@ -14,6 +14,7 @@ import {
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Plus, Users, MapPin, BookOpen, Trash2 } from 'lucide-react';
 import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-client';
+import { classSectionOptions } from '@/lib/class-sections';
 import { useLanguage } from '@/lib/language-context';
 import { useRoleAccess } from '@/lib/use-role-access';
 
@@ -31,6 +32,10 @@ const emptyClassroom: Classroom = {
   capacity: 0,
   classSize: 0,
 };
+
+const locationOptions = classSectionOptions.filter((className) =>
+  className.startsWith('Labo ') || /^ST\d+$/.test(className),
+);
 
 export default function ClassroomsPage() {
   const { t } = useLanguage();
@@ -101,7 +106,27 @@ export default function ClassroomsPage() {
               <FieldGroup>
                 <Field>
                   <FieldLabel>{t('Floor / Location')}</FieldLabel>
-                  <Input value={formData.floor} onChange={(event) => setFormData({ ...formData, floor: event.target.value })} required />
+                  <select
+                    value={formData.floor}
+                    onChange={(event) => setFormData({ ...formData, floor: event.target.value })}
+                    required
+                    className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
+                  >
+                    <option value="">{t('Select floor or location')}</option>
+                    {formData.floor && !locationOptions.includes(formData.floor) && (
+                      <option value={formData.floor}>{formData.floor}</option>
+                    )}
+                    <optgroup label="Labo">
+                      {locationOptions.filter((location) => location.startsWith('Labo ')).map((location) => (
+                        <option key={location} value={location}>{location}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="ST">
+                      {locationOptions.filter((location) => location.startsWith('ST')).map((location) => (
+                        <option key={location} value={location}>{location}</option>
+                      ))}
+                    </optgroup>
+                  </select>
                 </Field>
               </FieldGroup>
               <div className="grid grid-cols-2 gap-4">

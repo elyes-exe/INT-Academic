@@ -124,6 +124,7 @@ const french: Record<string, string> = {
   'sessions scheduled': 'cours planifiés', Monday: 'Lundi', Tuesday: 'Mardi', Wednesday: 'Mercredi',
   Thursday: 'Jeudi', Friday: 'Vendredi', 'Teacher name': 'Nom de l’enseignant', 'e.g., Mathematics': 'Ex. : mathématiques',
   'Select a teacher': 'Sélectionner un enseignant',
+  'Select floor or location': 'Sélectionner un étage ou un emplacement',
   'Unable to load teachers.': 'Impossible de charger les enseignants.',
   'No verified teachers are assigned to a section yet. Assign a section on Accounts.': 'Aucun enseignant vérifié n’est affecté à une section. Affectez une section depuis Comptes.',
   'e.g., 101': 'Ex. : 101', 'Create New Announcement': 'Créer une annonce', 'Edit Announcement': 'Modifier l’annonce',
