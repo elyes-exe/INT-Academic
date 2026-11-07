@@ -46,43 +46,124 @@ const timeSlots = [
   '14:00 - 15:00',
 ];
 
-const networkSecuritySubjects = [
+const generalAudiovisualSubjects = [
+  'Arabe',
+  'Français',
+  'Anglais',
+  'Droit et devoirs citoyens',
+  'Culture entrepreneuriale',
+  'Culture de santé et de sécurité au travail',
+  'Culture environnementale et maîtrise de l’énergie',
+  'Culture numérique',
+];
+
+const subjectCurricula = [
   {
-    category: 'Compétences spécifiques',
-    subjects: [
-      'Sécurité des réseaux',
-      'Réseaux locaux',
-      'Système d’exploitation réseaux',
-      'Administration des réseaux',
-      'Système électronique numérique',
-      'Système électronique analogique',
-      'Appliquer les notions de base d’électricité et d’électromagnétisme',
-      'Analyser les circuits à semi-conducteurs',
-      'Algorithme et structure des données',
-      'Architectures des systèmes informatiques et réseaux',
-      'Microprocesseur',
-      'Appliquer les notions de base de programmation des microcontrôleurs',
-      'Interconnexion réseaux',
-      'Ingénierie de câblages informatiques',
-      'Réseaux sans fil',
-      'Langage JavaScript',
-      'Réseaux étendus',
-      'Cloud computing',
-      'Projet de fin de formation',
-      'Stage d’initiation',
-      'Stage d’intégration',
+    classPrefix: 'BTS Réseau et Sécurité Informatique',
+    groups: [
+      {
+        category: 'Compétences spécifiques',
+        subjects: [
+          'Sécurité des réseaux',
+          'Réseaux locaux',
+          'Système d’exploitation réseaux',
+          'Administration des réseaux',
+          'Système électronique numérique',
+          'Système électronique analogique',
+          'Appliquer les notions de base d’électricité et d’électromagnétisme',
+          'Analyser les circuits à semi-conducteurs',
+          'Algorithme et structure des données',
+          'Architectures des systèmes informatiques et réseaux',
+          'Microprocesseur',
+          'Appliquer les notions de base de programmation des microcontrôleurs',
+          'Interconnexion réseaux',
+          'Ingénierie de câblages informatiques',
+          'Réseaux sans fil',
+          'Langage JavaScript',
+          'Réseaux étendus',
+          'Cloud computing',
+          'Projet de fin de formation',
+          'Stage d’initiation',
+          'Stage d’intégration',
+        ],
+      },
+      {
+        category: 'Enseignement Général',
+        subjects: [
+          'Culture de santé et de sécurité au travail',
+          'Français',
+          'Anglais',
+          'Arabe',
+          'Législation du travail',
+          'Culture environnementale et maîtrise de l’énergie',
+          'Culture entrepreneuriale',
+        ],
+      },
     ],
   },
   {
-    category: 'Enseignement Général',
-    subjects: [
-      'Culture de santé et de sécurité au travail',
-      'Français',
-      'Anglais',
-      'Arabe',
-      'Législation du travail',
-      'Culture environnementale et maîtrise de l’énergie',
-      'Culture entrepreneuriale',
+    classPrefix: 'BTS Audiovisuel - Prise de Son',
+    groups: [
+      {
+        category: 'Compétences spécifiques',
+        subjects: [
+          'Technique son',
+          'Montage et effets spéciaux',
+          'Acoustique',
+          'Initiation à la prise de vue',
+          'Découverte de la profession et de la démarche de formation',
+          'Histoire du cinéma',
+          'Installation et interconnexion des équipements sonores',
+          'Lumière',
+          'Utiliser l’outil informatique',
+          'Analyse filmique',
+          'Montage son et post-synchronisation',
+          'Initiation à la réalisation',
+          'Langage cinématographique',
+          'Nouvelles technologies d’exploitation audiovisuelle',
+          'Mixage et postproduction',
+          'Traitement du signal',
+          'Prise de son en studio',
+          'Signal vidéo',
+          'Musique cinématographique',
+          'Écriture scénaristique',
+          'Droit de l’audiovisuel',
+          'Physique appliquée',
+        ],
+      },
+      { category: 'Enseignement Général', subjects: generalAudiovisualSubjects },
+    ],
+  },
+  {
+    classPrefix: 'BTS Audiovisuel - Prise de Vue',
+    groups: [
+      {
+        category: 'Compétences spécifiques',
+        subjects: [
+          'Prise de vue',
+          'Photographie',
+          'Traitement d’image numérique',
+          'Machinerie et équipements audiovisuels',
+          'Découverte de la profession et de la démarche de formation',
+          'Histoire de l’art et du cinéma',
+          'Lumière',
+          'Technique de son',
+          'Analyse filmique',
+          'Utiliser l’outil informatique',
+          'Postproduction',
+          'Colorimétrie',
+          'Initiation à la réalisation',
+          'Langage cinématographique',
+          'Technique caméra',
+          'Signal vidéo',
+          'Écriture scénaristique',
+          'Direction d’acteur',
+          'Droit de l’audiovisuel',
+          'Initiation à la dramaturgie',
+          'Gestion de la production',
+        ],
+      },
+      { category: 'Enseignement Général', subjects: generalAudiovisualSubjects },
     ],
   },
 ];
@@ -165,7 +246,9 @@ export default function TimetablePage() {
     ...classSectionOptions,
     ...entries.map((entry) => entry.className),
   ]));
-  const usesNetworkSecuritySubjects = selectedClass.startsWith('BTS Réseau et Sécurité Informatique -');
+  const selectedCurriculum = subjectCurricula.find(({ classPrefix }) =>
+    selectedClass.startsWith(`${classPrefix} -`),
+  );
 
   const handleAddSlot = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -246,7 +329,7 @@ export default function TimetablePage() {
               <FieldGroup>
                 <Field>
                   <FieldLabel>{t('Subject')}</FieldLabel>
-                  {usesNetworkSecuritySubjects ? (
+                  {selectedCurriculum ? (
                     <select
                       value={formData.subject}
                       onChange={(event) => setFormData({ ...formData, subject: event.target.value })}
@@ -254,7 +337,7 @@ export default function TimetablePage() {
                       className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
                     >
                       <option value="">{t('Select subject')}</option>
-                      {networkSecuritySubjects.map(({ category, subjects }) => (
+                      {selectedCurriculum.groups.map(({ category, subjects }) => (
                         <optgroup key={category} label={category}>
                           {subjects.map((subject) => (
                             <option key={subject} value={subject}>{subject}</option>
