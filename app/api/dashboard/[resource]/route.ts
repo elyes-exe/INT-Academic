@@ -31,7 +31,11 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   const { resource } = await context.params;
-  const data = await listResource(resource, account.role === 'student' ? account.className : undefined);
+  const data = await listResource(
+    resource,
+    account.role === 'student' ? account.className : undefined,
+    account.role === 'student' ? account.classId : undefined,
+  );
 
   if (!data) {
     return NextResponse.json({ message: 'Resource not found.' }, { status: 404 });
@@ -47,7 +51,24 @@ export async function POST(request: Request, context: RouteContext) {
   }
   const { resource } = await context.params;
   const body = await request.json();
-  const item = await createResource(resource, body);
+  let item;
+  try {
+    item = await createResource(resource, body);
+  } catch (error) {
+    const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+    const message = error instanceof Error ? error.message : 'Unable to save the record.';
+    if (code === 'ER_DUP_ENTRY') {
+      return NextResponse.json({
+        message: resource === 'timetable'
+          ? 'That timetable class, day and time already has a session.'
+          : 'A record with a conflicting unique value already exists.',
+      }, { status: 409 });
+    }
+    if (message.startsWith('Choose') || message.startsWith('The selected') || message.startsWith('This subject')) {
+      return NextResponse.json({ message }, { status: 400 });
+    }
+    return NextResponse.json({ message: 'Unable to save the record.' }, { status: 500 });
+  }
 
   if (!item) {
     return NextResponse.json({ message: 'Resource not found.' }, { status: 404 });
@@ -69,7 +90,24 @@ export async function PUT(request: Request, context: RouteContext) {
     return NextResponse.json({ message: 'Item id is required.' }, { status: 400 });
   }
 
-  const item = await updateResource(resource, id, body);
+  let item;
+  try {
+    item = await updateResource(resource, id, body);
+  } catch (error) {
+    const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+    const message = error instanceof Error ? error.message : 'Unable to update the record.';
+    if (code === 'ER_DUP_ENTRY') {
+      return NextResponse.json({
+        message: resource === 'timetable'
+          ? 'That timetable class, day and time already has a session.'
+          : 'A record with a conflicting unique value already exists.',
+      }, { status: 409 });
+    }
+    if (message.startsWith('Choose') || message.startsWith('The selected') || message.startsWith('This subject')) {
+      return NextResponse.json({ message }, { status: 400 });
+    }
+    return NextResponse.json({ message: 'Unable to update the record.' }, { status: 500 });
+  }
 
   if (!item) {
     return NextResponse.json({ message: 'Resource or item not found.' }, { status: 404 });

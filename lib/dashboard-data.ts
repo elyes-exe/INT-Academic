@@ -1,5 +1,6 @@
 import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { ensureMysqlSchema, getMysqlPool } from '@/lib/server-mysql';
+import { validateTimetableSelection } from '@/lib/server-academics';
 
 type ResourceName =
   | 'students'
@@ -78,11 +79,16 @@ const resources: Record<ResourceName, ResourceConfig> = {
     table: 'timetable_entries',
     fields: {
       className: 'class_name',
+      classId: 'class_id',
+      academicYear: 'academic_year',
       day: 'day_name',
       time: 'time_slot',
       subject: 'subject',
+      subjectId: 'subject_id',
       teacher: 'teacher',
+      teacherId: 'teacher_id',
       classroom: 'classroom',
+      classroomId: 'classroom_id',
     },
     orderBy: 'class_name ASC, day_name ASC, time_slot ASC',
   },
@@ -173,7 +179,7 @@ export async function recordActivity(action: string, resource: string, label?: s
   );
 }
 
-export async function listResource(resource: string, studentClass?: string) {
+export async function listResource(resource: string, studentClass?: string, studentClassId?: number) {
   const config = getResourceConfig(resource);
 
   if (!config) {
@@ -183,14 +189,22 @@ export async function listResource(resource: string, studentClass?: string) {
   await ensureMysqlSchema();
 
   const classScopedStudentResources = ['students', 'timetable', 'exams'];
-  const [rows] = studentClass !== undefined && classScopedStudentResources.includes(resource)
+  const [rows] = studentClass !== undefined && resource === 'timetable' && studentClassId
     ? await getMysqlPool().execute<RowDataPacket[]>(
-        `SELECT * FROM ${config.table} WHERE class_name = ? ORDER BY ${config.orderBy}`,
-        [studentClass],
+        `SELECT * FROM ${config.table}
+         WHERE class_id = ? OR (class_id IS NULL AND class_name = ? AND academic_year =
+           (SELECT academic_year FROM academic_classes WHERE id = ?))
+         ORDER BY ${config.orderBy}`,
+        [studentClassId, studentClass, studentClassId],
       )
-    : await getMysqlPool().query<RowDataPacket[]>(
-        `SELECT * FROM ${config.table} ORDER BY ${config.orderBy}`,
-      );
+    : studentClass !== undefined && classScopedStudentResources.includes(resource)
+      ? await getMysqlPool().execute<RowDataPacket[]>(
+          `SELECT * FROM ${config.table} WHERE class_name = ? ORDER BY ${config.orderBy}`,
+          [studentClass],
+        )
+      : await getMysqlPool().query<RowDataPacket[]>(
+          `SELECT * FROM ${config.table} ORDER BY ${config.orderBy}`,
+        );
 
   return rows.map((row) => rowToItem(row, config));
 }
@@ -203,6 +217,26 @@ export async function createResource(resource: string, payload: Record<string, u
   }
 
   await ensureMysqlSchema();
+
+  if (resource === 'timetable') {
+    const linked = await validateTimetableSelection({
+      className: payload.className,
+      subjectId: payload.subjectId,
+      teacherId: payload.teacherId,
+      academicYear: payload.academicYear,
+    });
+    const [classrooms] = await getMysqlPool().execute<RowDataPacket[]>(
+      'SELECT id FROM classrooms WHERE name = ? ORDER BY id LIMIT 1', [normalizeValue(payload.classroom)],
+    );
+    payload = {
+      ...payload,
+      classId: linked.classId,
+      subjectId: linked.subjectId,
+      subject: linked.subjectName,
+      teacherId: linked.teacherId,
+      classroomId: classrooms[0]?.id ?? null,
+    };
+  }
 
   const { columns, values } = payloadValues(config, payload);
 
@@ -239,6 +273,29 @@ export async function updateResource(resource: string, id: string, payload: Reco
   }
 
   await ensureMysqlSchema();
+
+  if (resource === 'timetable') {
+    const current = await getResourceById(config, id);
+    if (!current) return null;
+    const next = { ...current, ...payload };
+    const linked = await validateTimetableSelection({
+      className: next.className,
+      subjectId: next.subjectId,
+      teacherId: next.teacherId,
+      academicYear: next.academicYear,
+    });
+    const [classrooms] = await getMysqlPool().execute<RowDataPacket[]>(
+      'SELECT id FROM classrooms WHERE name = ? ORDER BY id LIMIT 1', [normalizeValue(next.classroom)],
+    );
+    payload = {
+      ...next,
+      classId: linked.classId,
+      subjectId: linked.subjectId,
+      subject: linked.subjectName,
+      teacherId: linked.teacherId,
+      classroomId: classrooms[0]?.id ?? null,
+    };
+  }
 
   const { entries, values } = payloadValues(config, payload);
 

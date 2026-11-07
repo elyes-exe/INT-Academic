@@ -14,6 +14,7 @@ import {
   Megaphone,
   Settings,
   UserCog,
+  BookOpen,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
   { label: 'Exams', href: '/dashboard/exams', icon: FileText },
   { label: 'Announcements', href: '/dashboard/announcements', icon: Megaphone },
   { label: 'Accounts', href: '/dashboard/accounts', icon: UserCog, adminOnly: true },
+  { label: 'Subjects', href: '/dashboard/subjects', icon: BookOpen, adminOnly: true },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 

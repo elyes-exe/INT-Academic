@@ -20,6 +20,7 @@ type AccountRow = RowDataPacket & {
   password: string;
   role: AccountRole;
   class_name: string | null;
+  class_id: number | null;
   status: AccountStatus;
   created_at: Date | string;
   verified_at: Date | string | null;
@@ -47,6 +48,7 @@ function accountFromRow(row: AccountRow): Account {
     password: row.password,
     role: row.role,
     className: row.class_name ?? undefined,
+    classId: row.class_id === null ? undefined : Number(row.class_id),
     status: row.status,
     createdAt: isoDate(row.created_at) ?? new Date().toISOString(),
     verifiedAt: isoDate(row.verified_at),
@@ -246,11 +248,14 @@ export async function updateAccount(
   await getMysqlPool().execute(
     `
       UPDATE accounts
-      SET role = ?, class_name = ?, status = ?, verified_at = ?
+      SET role = ?, class_name = ?,
+          class_id = (SELECT c.id FROM academic_classes c WHERE c.name = ? AND c.academic_year = '2026-2027' LIMIT 1),
+          status = ?, verified_at = ?
       WHERE id = ?
     `,
     [
       changes.role ?? existingAccount.role,
+      changes.className === undefined ? existingAccount.className ?? null : changes.className.trim() || null,
       changes.className === undefined ? existingAccount.className ?? null : changes.className.trim() || null,
       status,
       mysqlDate(verifiedAt),

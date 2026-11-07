@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import {
   Dialog,
@@ -13,15 +12,19 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field';
-import { Plus, Trash2 } from 'lucide-react';
+import { Check, LoaderCircle, Plus, Search, Trash2 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { deleteResource, fetchResource, saveResource } from '@/lib/dashboard-client';
-import { classSections, classSectionOptions, getDiplomaLevel } from '@/lib/class-sections';
 import { useLanguage } from '@/lib/language-context';
 import { useRoleAccess } from '@/lib/use-role-access';
 import { getCurrentAccount } from '@/lib/local-auth';
 
 type TimetableEntry = {
   id?: number;
+  classId?: number | null;
+  academicYear?: string;
+  subjectId?: number | null;
+  teacherId?: string | null;
   className: string;
   day: string;
   time: string;
@@ -36,6 +39,9 @@ type TeacherOption = {
   className: string;
 };
 
+type SubjectOption = { id: number; name: string; category: string; teacherId: string; teacherName: string };
+type AcademicClassOption = { id: number; name: string; academicYear: string; studyYear: number; diplomaCode: string };
+
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const timeSlots = [
   '09:00 - 10:00',
@@ -46,130 +52,8 @@ const timeSlots = [
   '14:00 - 15:00',
 ];
 
-const generalAudiovisualSubjects = [
-  'Arabe',
-  'Français',
-  'Anglais',
-  'Droit et devoirs citoyens',
-  'Culture entrepreneuriale',
-  'Culture de santé et de sécurité au travail',
-  'Culture environnementale et maîtrise de l’énergie',
-  'Culture numérique',
-];
-
-const subjectCurricula = [
-  {
-    classPrefix: 'BTS Réseau et Sécurité Informatique',
-    groups: [
-      {
-        category: 'Compétences spécifiques',
-        subjects: [
-          'Sécurité des réseaux',
-          'Réseaux locaux',
-          'Système d’exploitation réseaux',
-          'Administration des réseaux',
-          'Système électronique numérique',
-          'Système électronique analogique',
-          'Appliquer les notions de base d’électricité et d’électromagnétisme',
-          'Analyser les circuits à semi-conducteurs',
-          'Algorithme et structure des données',
-          'Architectures des systèmes informatiques et réseaux',
-          'Microprocesseur',
-          'Appliquer les notions de base de programmation des microcontrôleurs',
-          'Interconnexion réseaux',
-          'Ingénierie de câblages informatiques',
-          'Réseaux sans fil',
-          'Langage JavaScript',
-          'Réseaux étendus',
-          'Cloud computing',
-          'Projet de fin de formation',
-          'Stage d’initiation',
-          'Stage d’intégration',
-        ],
-      },
-      {
-        category: 'Enseignement Général',
-        subjects: [
-          'Culture de santé et de sécurité au travail',
-          'Français',
-          'Anglais',
-          'Arabe',
-          'Législation du travail',
-          'Culture environnementale et maîtrise de l’énergie',
-          'Culture entrepreneuriale',
-        ],
-      },
-    ],
-  },
-  {
-    classPrefix: 'BTS Audiovisuel - Prise de Son',
-    groups: [
-      {
-        category: 'Compétences spécifiques',
-        subjects: [
-          'Technique son',
-          'Montage et effets spéciaux',
-          'Acoustique',
-          'Initiation à la prise de vue',
-          'Découverte de la profession et de la démarche de formation',
-          'Histoire du cinéma',
-          'Installation et interconnexion des équipements sonores',
-          'Lumière',
-          'Utiliser l’outil informatique',
-          'Analyse filmique',
-          'Montage son et post-synchronisation',
-          'Initiation à la réalisation',
-          'Langage cinématographique',
-          'Nouvelles technologies d’exploitation audiovisuelle',
-          'Mixage et postproduction',
-          'Traitement du signal',
-          'Prise de son en studio',
-          'Signal vidéo',
-          'Musique cinématographique',
-          'Écriture scénaristique',
-          'Droit de l’audiovisuel',
-          'Physique appliquée',
-        ],
-      },
-      { category: 'Enseignement Général', subjects: generalAudiovisualSubjects },
-    ],
-  },
-  {
-    classPrefix: 'BTS Audiovisuel - Prise de Vue',
-    groups: [
-      {
-        category: 'Compétences spécifiques',
-        subjects: [
-          'Prise de vue',
-          'Photographie',
-          'Traitement d’image numérique',
-          'Machinerie et équipements audiovisuels',
-          'Découverte de la profession et de la démarche de formation',
-          'Histoire de l’art et du cinéma',
-          'Lumière',
-          'Technique de son',
-          'Analyse filmique',
-          'Utiliser l’outil informatique',
-          'Postproduction',
-          'Colorimétrie',
-          'Initiation à la réalisation',
-          'Langage cinématographique',
-          'Technique caméra',
-          'Signal vidéo',
-          'Écriture scénaristique',
-          'Direction d’acteur',
-          'Droit de l’audiovisuel',
-          'Initiation à la dramaturgie',
-          'Gestion de la production',
-        ],
-      },
-      { category: 'Enseignement Général', subjects: generalAudiovisualSubjects },
-    ],
-  },
-];
-
 const emptyEntry: TimetableEntry = {
-  className: classSectionOptions[0],
+  className: '',
   day: 'Monday',
   time: '',
   subject: '',
@@ -177,39 +61,69 @@ const emptyEntry: TimetableEntry = {
   classroom: '',
 };
 
-function isTimetableClass(className: string) {
-  const level = getDiplomaLevel(className);
-  return level !== 'Labo' && level !== 'ST';
-}
-
 export default function TimetablePage() {
   const { t } = useLanguage();
   const { canManage, role } = useRoleAccess();
-  const [selectedClass, setSelectedClass] = useState(classSectionOptions[0]);
+  const [selectedClass, setSelectedClass] = useState('');
   const [assignedClass, setAssignedClass] = useState('');
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
+  const [academicClasses, setAcademicClasses] = useState<AcademicClassOption[]>([]);
+  const [subjects, setSubjects] = useState<SubjectOption[]>([]);
+  const [subjectSearch, setSubjectSearch] = useState('');
+  const [subjectsLoading, setSubjectsLoading] = useState(false);
+  const [subjectsError, setSubjectsError] = useState('');
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [teacherLoadError, setTeacherLoadError] = useState('');
+  const [scheduleError, setScheduleError] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<TimetableEntry>(emptyEntry);
 
   const loadEntries = async () => {
-    const [nextEntries, account] = await Promise.all([
+    const [nextEntries, account, catalogueResponse] = await Promise.all([
       fetchResource<TimetableEntry>('timetable'),
       getCurrentAccount(),
+      fetch('/api/academic/catalogue?academicYear=2026-2027'),
     ]);
+    const catalogueData = await catalogueResponse.json();
+    if (!catalogueResponse.ok) throw new Error(catalogueData.message || 'Unable to load academic classes.');
     setEntries(nextEntries);
+    const classOptions = (catalogueData.classes ?? []) as AcademicClassOption[];
+    setAcademicClasses(classOptions);
     if (account?.role === 'student') {
       const studentClass = account.className ?? '';
       setAssignedClass(studentClass);
       setSelectedClass(studentClass);
+    } else if (classOptions.length > 0) {
+      setSelectedClass((current) => current || classOptions[0].name);
     }
   };
 
   useEffect(() => {
     loadEntries();
   }, []);
+
+  useEffect(() => {
+    if (!isDialogOpen || !selectedClass) return;
+    let isMounted = true;
+    setSubjectsLoading(true);
+    setSubjectsError('');
+    setSubjectSearch('');
+    setSubjects([]);
+    setSelectedTeacherId('');
+    setFormData((current) => ({ ...current, subject: '', subjectId: undefined, teacher: '', teacherId: undefined }));
+    fetch(`/api/academic/subjects?className=${encodeURIComponent(selectedClass)}&academicYear=2026-2027`)
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Unable to load subjects.');
+        if (isMounted) setSubjects((data.subjects ?? []) as SubjectOption[]);
+      })
+      .catch((error: unknown) => {
+        if (isMounted) setSubjectsError(error instanceof Error ? error.message : 'Unable to load subjects.');
+      })
+      .finally(() => { if (isMounted) setSubjectsLoading(false); });
+    return () => { isMounted = false; };
+  }, [isDialogOpen, selectedClass]);
 
   useEffect(() => {
     if (!canManage) return;
@@ -248,27 +162,49 @@ export default function TimetablePage() {
     [entries, selectedClass],
   );
   const availableClasses = Array.from(new Set([
-    ...classSectionOptions.filter(isTimetableClass),
-    ...entries.map((entry) => entry.className).filter(isTimetableClass),
+    ...academicClasses.map((academicClass) => academicClass.name),
+    ...entries.map((entry) => entry.className).filter((className) => !/^(Labo\s+\d+|ST\d+)$/i.test(className)),
   ]));
-  const selectedCurriculum = subjectCurricula.find(({ classPrefix }) =>
-    selectedClass.startsWith(`${classPrefix} -`),
+  const selectedSubject = subjects.find((subject) => subject.id === formData.subjectId);
+  const classTeachers = teachers.filter((teacher) => teacher.className === selectedClass);
+  const visibleSubjects = subjects.filter((subject) =>
+    `${subject.name} ${subject.category}`.toLocaleLowerCase().includes(subjectSearch.trim().toLocaleLowerCase()),
   );
 
   const handleAddSlot = async (event: React.FormEvent) => {
     event.preventDefault();
     const selectedTeacher = teachers.find((teacher) => teacher.id === selectedTeacherId);
-    if (!selectedTeacher) return;
-
-    await saveResource<TimetableEntry>('timetable', {
-      ...formData,
-      className: selectedClass,
-      teacher: `${selectedTeacher.fullName} - ${selectedTeacher.className}`,
-    });
-    await loadEntries();
-    setFormData({ ...emptyEntry, className: selectedClass });
-    setSelectedTeacherId('');
-    setIsDialogOpen(false);
+    const subjectTeacher = selectedSubject?.teacherName ?? '';
+    const teacherName = selectedTeacher
+      ? `${selectedTeacher.fullName} - ${selectedTeacher.className}`
+      : subjectTeacher || formData.teacher.trim();
+    if (!selectedSubject) {
+      setScheduleError('Choose a subject from this class to continue.');
+      return;
+    }
+    if (!teacherName) {
+      setScheduleError('Enter or select a teacher.');
+      return;
+    }
+    try {
+      setScheduleError('');
+      await saveResource<TimetableEntry>('timetable', {
+        ...formData,
+        className: selectedClass,
+        classId: academicClasses.find((item) => item.name === selectedClass)?.id,
+        academicYear: '2026-2027',
+        subjectId: selectedSubject.id,
+        subject: selectedSubject.name,
+        teacherId: selectedTeacherId || selectedSubject.teacherId || undefined,
+        teacher: teacherName,
+      });
+      await loadEntries();
+      setFormData({ ...emptyEntry, className: selectedClass });
+      setSelectedTeacherId('');
+      setIsDialogOpen(false);
+    } catch (error) {
+      setScheduleError(error instanceof Error ? error.message : 'Unable to save this schedule.');
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -296,7 +232,7 @@ export default function TimetablePage() {
               {t('Add Schedule')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-card border border-border">
+          <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto bg-card border border-border">
             <DialogHeader>
               <DialogTitle className="text-foreground">{t('Add New Schedule')}</DialogTitle>
             </DialogHeader>
@@ -334,56 +270,62 @@ export default function TimetablePage() {
               <FieldGroup>
                 <Field>
                   <FieldLabel>{t('Subject')}</FieldLabel>
-                  {selectedCurriculum ? (
-                    <select
-                      value={formData.subject}
-                      onChange={(event) => setFormData({ ...formData, subject: event.target.value })}
-                      required
-                      className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
-                    >
-                      <option value="">{t('Select subject')}</option>
-                      {selectedCurriculum.groups.map(({ category, subjects }) => (
-                        <optgroup key={category} label={category}>
-                          {subjects.map((subject) => (
-                            <option key={subject} value={subject}>{subject}</option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  ) : (
-                    <Input
-                      placeholder={t('e.g., Mathematics')}
-                      value={formData.subject}
-                      onChange={(event) => setFormData({ ...formData, subject: event.target.value })}
-                      required
-                      className="bg-background text-foreground"
-                    />
-                  )}
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input value={subjectSearch} onChange={(event) => setSubjectSearch(event.target.value)} placeholder={t('Search subjects...')} className="bg-background pl-9 text-foreground" aria-label={t('Search subjects')} />
+                    </div>
+                    <ScrollArea className="h-[200px] rounded-lg border border-border bg-background">
+                      <div role="listbox" aria-label={t('Available subjects')} className="p-1">
+                        {subjectsLoading ? <div className="flex h-24 items-center justify-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="h-4 w-4 animate-spin" />{t('Loading subjects...')}</div>
+                          : subjectsError ? <p role="alert" className="p-4 text-sm text-destructive">{t(subjectsError)}</p>
+                          : subjects.length === 0 ? <p className="p-4 text-sm text-muted-foreground">{t('No subjects assigned to this section yet.')}</p>
+                          : visibleSubjects.length === 0 ? <p className="p-4 text-sm text-muted-foreground">{t('No subjects match your search.')}</p>
+                          : visibleSubjects.map((subject) => <button
+                            key={subject.id}
+                            type="button"
+                            role="option"
+                            aria-selected={formData.subjectId === subject.id}
+                            onClick={() => {
+                              setFormData({ ...formData, subjectId: subject.id, subject: subject.name, teacherId: subject.teacherId || undefined, teacher: subject.teacherName });
+                              setSelectedTeacherId(subject.teacherId || '');
+                              setScheduleError('');
+                            }}
+                            className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-primary/10 ${formData.subjectId === subject.id ? 'bg-primary/15 text-primary' : 'text-foreground'}`}
+                          >
+                            <span><span className="block">{subject.name}</span><span className="text-xs text-muted-foreground">{t(subject.category)}</span></span>
+                            {formData.subjectId === subject.id && <Check className="h-4 w-4 shrink-0" />}
+                          </button>)}
+                      </div>
+                    </ScrollArea>
+                    {selectedSubject && <p className="text-xs text-muted-foreground">{t('Selected')}: {selectedSubject.name}</p>}
+                  </div>
                 </Field>
               </FieldGroup>
               <FieldGroup>
                 <Field>
                   <FieldLabel>{t('Teacher')}</FieldLabel>
-                  <select
-                    value={selectedTeacherId}
-                    onChange={(event) => setSelectedTeacherId(event.target.value)}
-                    required
-                    className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
-                  >
-                    <option value="">{t('Select a teacher')}</option>
-                    {teachers.map((teacher) => (
-                      <option key={teacher.id} value={teacher.id}>
-                        {teacher.fullName} - {teacher.className}
-                      </option>
-                    ))}
-                  </select>
-                  {teacherLoadError ? (
-                    <p role="alert" className="text-xs text-destructive mt-1">{t(teacherLoadError)}</p>
-                  ) : teachers.length === 0 ? (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t('No verified teachers are assigned to a section yet. Assign a section on Accounts.')}
-                    </p>
-                  ) : null}
+                  {selectedSubject?.teacherId ? (
+                    <div>
+                      <Input value={selectedSubject.teacherName || teachers.find((teacher) => teacher.id === selectedSubject.teacherId)?.fullName || ''} readOnly className="bg-background text-foreground" />
+                      <p className="mt-1 text-xs text-muted-foreground">{t('Teacher assigned to this subject')}</p>
+                    </div>
+                  ) : classTeachers.length > 0 ? (
+                    <select
+                      value={selectedTeacherId}
+                      onChange={(event) => { setSelectedTeacherId(event.target.value); setFormData({ ...formData, teacherId: event.target.value || undefined, teacher: '' }); }}
+                      required
+                      className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
+                    >
+                      <option value="">{t('Select a teacher')}</option>
+                      {classTeachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.fullName} - {teacher.className}</option>)}
+                    </select>
+                  ) : (
+                    <div>
+                      <Input placeholder={t('Teacher name')} value={formData.teacher} onChange={(event) => setFormData({ ...formData, teacher: event.target.value, teacherId: undefined })} required className="bg-background text-foreground" />
+                      {teacherLoadError ? <p role="alert" className="mt-1 text-xs text-destructive">{t(teacherLoadError)}</p> : <p className="mt-1 text-xs text-muted-foreground">{t('No verified teachers are assigned to this class yet. Enter the teacher name for now.')}</p>}
+                    </div>
+                  )}
                 </Field>
               </FieldGroup>
               <FieldGroup>
@@ -398,6 +340,7 @@ export default function TimetablePage() {
                   />
                 </Field>
               </FieldGroup>
+              {scheduleError && <p role="alert" className="text-sm text-destructive">{t(scheduleError)}</p>}
               <div className="flex gap-2 justify-end pt-4">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   {t('Cancel')}
@@ -424,16 +367,12 @@ export default function TimetablePage() {
             onChange={(event) => setSelectedClass(event.target.value)}
             className="w-full max-w-xl px-3 py-2 rounded-lg bg-background text-foreground border border-border"
           >
-            {classSections.filter(({ level }) => level !== 'Labo' && level !== 'ST').map(({ level }) => (
-              <optgroup key={level} label={level}>
-                {classSectionOptions.filter((className) => isTimetableClass(className) && getDiplomaLevel(className) === level).map((className) => (
-                  <option key={className} value={className}>{className}</option>
-                ))}
+            {Array.from(new Set(academicClasses.map((academicClass) => academicClass.diplomaCode))).map((diplomaCode) => (
+              <optgroup key={diplomaCode} label={diplomaCode}>
+                {academicClasses.filter((academicClass) => academicClass.diplomaCode === diplomaCode).map((academicClass) => <option key={academicClass.id} value={academicClass.name}>{academicClass.name}</option>)}
               </optgroup>
             ))}
-            {availableClasses.filter((className) => isTimetableClass(className) && !classSectionOptions.includes(className)).map((className) => (
-              <option key={className} value={className}>{className}</option>
-            ))}
+            {availableClasses.filter((className) => !academicClasses.some((academicClass) => academicClass.name === className)).map((className) => <option key={className} value={className}>{className}</option>)}
           </select>
         </Card>
       )}

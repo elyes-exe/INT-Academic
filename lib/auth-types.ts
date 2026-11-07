@@ -7,6 +7,7 @@ export type Account = {
   email: string;
   phone?: string;
   className?: string;
+  classId?: number;
   password?: string;
   role: AccountRole;
   status: AccountStatus;
