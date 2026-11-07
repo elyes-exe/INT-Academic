@@ -177,6 +177,11 @@ const emptyEntry: TimetableEntry = {
   classroom: '',
 };
 
+function isTimetableClass(className: string) {
+  const level = getDiplomaLevel(className);
+  return level !== 'Labo' && level !== 'ST';
+}
+
 export default function TimetablePage() {
   const { t } = useLanguage();
   const { canManage, role } = useRoleAccess();
@@ -243,8 +248,8 @@ export default function TimetablePage() {
     [entries, selectedClass],
   );
   const availableClasses = Array.from(new Set([
-    ...classSectionOptions,
-    ...entries.map((entry) => entry.className),
+    ...classSectionOptions.filter(isTimetableClass),
+    ...entries.map((entry) => entry.className).filter(isTimetableClass),
   ]));
   const selectedCurriculum = subjectCurricula.find(({ classPrefix }) =>
     selectedClass.startsWith(`${classPrefix} -`),
@@ -419,14 +424,14 @@ export default function TimetablePage() {
             onChange={(event) => setSelectedClass(event.target.value)}
             className="w-full max-w-xl px-3 py-2 rounded-lg bg-background text-foreground border border-border"
           >
-            {classSections.map(({ level }) => (
+            {classSections.filter(({ level }) => level !== 'Labo' && level !== 'ST').map(({ level }) => (
               <optgroup key={level} label={level}>
-                {classSectionOptions.filter((className) => getDiplomaLevel(className) === level).map((className) => (
+                {classSectionOptions.filter((className) => isTimetableClass(className) && getDiplomaLevel(className) === level).map((className) => (
                   <option key={className} value={className}>{className}</option>
                 ))}
               </optgroup>
             ))}
-            {availableClasses.filter((className) => !classSectionOptions.includes(className)).map((className) => (
+            {availableClasses.filter((className) => isTimetableClass(className) && !classSectionOptions.includes(className)).map((className) => (
               <option key={className} value={className}>{className}</option>
             ))}
           </select>
