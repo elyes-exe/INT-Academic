@@ -46,6 +46,47 @@ const timeSlots = [
   '14:00 - 15:00',
 ];
 
+const networkSecuritySubjects = [
+  {
+    category: 'Compétences spécifiques',
+    subjects: [
+      'Sécurité des réseaux',
+      'Réseaux locaux',
+      'Système d’exploitation réseaux',
+      'Administration des réseaux',
+      'Système électronique numérique',
+      'Système électronique analogique',
+      'Appliquer les notions de base d’électricité et d’électromagnétisme',
+      'Analyser les circuits à semi-conducteurs',
+      'Algorithme et structure des données',
+      'Architectures des systèmes informatiques et réseaux',
+      'Microprocesseur',
+      'Appliquer les notions de base de programmation des microcontrôleurs',
+      'Interconnexion réseaux',
+      'Ingénierie de câblages informatiques',
+      'Réseaux sans fil',
+      'Langage JavaScript',
+      'Réseaux étendus',
+      'Cloud computing',
+      'Projet de fin de formation',
+      'Stage d’initiation',
+      'Stage d’intégration',
+    ],
+  },
+  {
+    category: 'Enseignement Général',
+    subjects: [
+      'Culture de santé et de sécurité au travail',
+      'Français',
+      'Anglais',
+      'Arabe',
+      'Législation du travail',
+      'Culture environnementale et maîtrise de l’énergie',
+      'Culture entrepreneuriale',
+    ],
+  },
+];
+
 const emptyEntry: TimetableEntry = {
   className: classSectionOptions[0],
   day: 'Monday',
@@ -124,6 +165,7 @@ export default function TimetablePage() {
     ...classSectionOptions,
     ...entries.map((entry) => entry.className),
   ]));
+  const usesNetworkSecuritySubjects = selectedClass.startsWith('BTS Réseau et Sécurité Informatique -');
 
   const handleAddSlot = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -204,13 +246,31 @@ export default function TimetablePage() {
               <FieldGroup>
                 <Field>
                   <FieldLabel>{t('Subject')}</FieldLabel>
-                  <Input
-                    placeholder={t('e.g., Mathematics')}
-                    value={formData.subject}
-                    onChange={(event) => setFormData({ ...formData, subject: event.target.value })}
-                    required
-                    className="bg-background text-foreground"
-                  />
+                  {usesNetworkSecuritySubjects ? (
+                    <select
+                      value={formData.subject}
+                      onChange={(event) => setFormData({ ...formData, subject: event.target.value })}
+                      required
+                      className="w-full px-3 py-2 rounded-lg bg-background text-foreground border border-border"
+                    >
+                      <option value="">{t('Select subject')}</option>
+                      {networkSecuritySubjects.map(({ category, subjects }) => (
+                        <optgroup key={category} label={category}>
+                          {subjects.map((subject) => (
+                            <option key={subject} value={subject}>{subject}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input
+                      placeholder={t('e.g., Mathematics')}
+                      value={formData.subject}
+                      onChange={(event) => setFormData({ ...formData, subject: event.target.value })}
+                      required
+                      className="bg-background text-foreground"
+                    />
+                  )}
                 </Field>
               </FieldGroup>
               <FieldGroup>
