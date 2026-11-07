@@ -1,7 +1,15 @@
+export const classYearOptions = ['1ère année', '2ème année'] as const;
+
+function diplomaClasses(level: 'BTS' | 'BTP', programs: readonly string[]) {
+  return programs.flatMap((program) =>
+    classYearOptions.map((year) => `${level} ${program} - ${year}`),
+  );
+}
+
 export const classSections = [
   {
     level: 'BTS',
-    programs: [
+    classes: diplomaClasses('BTS', [
       'Réseau et Sécurité Informatique',
       'Audiovisuel - Prise de Son',
       'Audiovisuel - Prise de Vue',
@@ -14,11 +22,11 @@ export const classSections = [
       'Commerce international',
       'Comptabilité & Finance',
       'Logistique de Distribution',
-    ],
+    ]),
   },
   {
     level: 'BTP',
-    programs: [
+    classes: diplomaClasses('BTP', [
       'Informatique de Gestion',
       'Multimédia',
       'Comptable d’Entreprise',
@@ -26,26 +34,26 @@ export const classSections = [
       'Maintenance Microsystèmes Informatiques',
       'Secrétariat',
       'Décoration et Design d’Intérieur',
-    ],
+    ]),
   },
   {
     level: 'CAP',
-    programs: ['Vendeur Caissier'],
+    classes: ['CAP Vendeur Caissier'],
+  },
+  {
+    level: 'Labo',
+    classes: Array.from({ length: 15 }, (_, index) => `Labo ${index + 1}`),
+  },
+  {
+    level: 'ST',
+    classes: Array.from({ length: 12 }, (_, index) => `ST${index + 1}`),
   },
 ] as const;
 
 export type DiplomaLevel = (typeof classSections)[number]['level'];
 
-export const classYearOptions = ['1ère année', '2ème année'] as const;
-
-export const classSectionOptions: string[] = classSections.flatMap(({ level, programs }) =>
-  programs.flatMap((program) =>
-    level === 'CAP'
-      ? [`${level} ${program}`]
-      : classYearOptions.map((year) => `${level} ${program} - ${year}`),
-  ),
-);
+export const classSectionOptions: string[] = classSections.flatMap(({ classes }) => [...classes]);
 
 export function getDiplomaLevel(className: string): DiplomaLevel | null {
-  return classSections.find(({ level }) => className.startsWith(`${level} `))?.level ?? null;
+  return classSections.find(({ classes }) => (classes as readonly string[]).includes(className))?.level ?? null;
 }
